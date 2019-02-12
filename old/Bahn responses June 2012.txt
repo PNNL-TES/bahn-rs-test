@@ -1,0 +1,36 @@
+Michael Bahn responses from 6-27-12
+===================================
+
+B: I have re-run this with the latest version of the database, which includes studies published in 2011, so now 5% more data (~530 data points). Here's the basic result for this new expanded data set, testing whether "Rs_annual_pred" (annual SR as predicted by your model using SRmat) is different from "Rs_annual" (as reported independently by authors):
+ 
+So pretty good!--slope not different from 1, intercept not different from 0, though quite a bit of unexplained variance.
+ 
+M: Great! The challenge of this study would be to see how we can reduce the unexplained variance, and what we can learn from it.
+ 
+ 
+B: To compute SRmat, I'm using authors' published temp-SR relationships, but sometimes these models don't include MAT (e.g., MAT of -1 in a boreal forest, but authors describe a T-SR model between 2 and 20 C). There are obvious risks in extrapolating any statistical model outside of its fitted range, so I broke these cases out separately. But there's no statistically significant effect here (i.e., out-of-MAT models don't predict any differently than in-MAT models).
+ 
+M: Thanks for clarifying.
+ 
+ 
+B: Ra-dominated systems are indeed worse--more scatter, and farther from the 1:1 line. But the difference isn't significant (i.e., if we include whether an ecosystem is dominated by Ra or Rh as a factor). So probably need to be cautious here, as the sample sizes are getting small (less than 100 data points have Ra and Rh data reported).
+ 
+M: (to take up my previous point:) Have you tested the residuals as a function of Ra/Rh? (which might indicate whether there is a trend hidden in the scatter) 100 data points does not sound all that bad to me.
+ 
+ 
+B: The SRDB dataset does distinguish between wet and dry seasons, when available, but annual numbers are only included when reported as such. So we do have wet- and dry-season Rs available, too.
+ 
+I've gone back and looked at this again. Ecosystems with very low annual precip are, in fact, associated with higher errors--'your' equation increasingly underpredicts actual Rs as the climate gets drier (see attached figure). One other possibility would be to use something like the Palmer Drought Index, though I haven't done this yet.
+ 
+M: If we want to identify ways of reducing uncertainties in the estimation of SRannual from SRmat this will probably be one of the key issues to look into. Would you be able to calculate the Palmer Drought Index for all the Mediterranean, semiarid and arid sites in your database?
+ 
+ 
+B: Yes, there's multi-year data whenever reported by the original authors. Sites with annual Rs of 900-1400 gC/m2/yr have higher interannual variability, both as an absolute quantity and as a fraction (20-65%) of annual Rs, than do drier or wetter sites, where i.v. seems to be ~10% or lower.
+ 
+M: This is an interesting finding. Have you normalized interannual variability and tested the coefficient of variation? In any case I would have expected interannual variability to be higher in drier sites, where SR is reduced by dry periods and small differences in the amount and timing of precip causing larger differences in annual total. For wetter sites the situation is less clear-cut: e.g. in tropical regions with high annual precip and high SR, the i.v. of the length and intensity of the dry season(s) could increase i.v. of SR; whereas in humid regions i.v. should be generally lower, but I would not expect particularly high SR there.
+ 
+ 
+There are only 34 data points with both Ra/Rh and multi-year data available...but for what it's worth, the picture is similar: higher i.v. at intermediate Ra/Rh values.
+ 
+M: This is again very interesting,  hard to explain and definitely worth exploring further. As your earlier work clearly demonstrates a correlation between Ra and Rh across a broad range of Rs, this raises the more general question of whether and how Ra/Rh contributes to i.v. of SR per se or reflects an adaptation to fluctuating environmental conditions which are primarily responsible for i.v. of SR. But why should Ra/Rh be intermediate at intermediate SR? Perhaps it would make sense to break the dataset down into major vegetation types and biomes.
+ 

@@ -1,0 +1,148 @@
+Notes for Bahn analysis
+
+
+TO DO: rework srdb-support.xlsx with new model names
+TO DO: rework analysis to use NCEP/NCAR climate data (R package)?
+
+======================================
+10 June 2011
+
+	First step is to go through and put in as many models as possible
+		QC: screwy values, outliers, etc.
+		Working on this
+	
+	MB's two hypotheses:
+	
+	"I would (quickly) hypothesize that the reported relationship should be tighter the less pronounced seasonality (esp. as concerns water availability) and the higher the Rh/Ra ratio is."
+
+======================================
+14 June 2011
+
+	Put in a warning if LU_MAT is outside of model's temperature range
+	We're now computing sd( moisture index ) per MB's quick hypothesis
+	
+	Continue to look at individual studies' data based on md (model diagnostic) plots
+	
+	Showing up with very high residuals:
+	
+	Record	Study	Author		Diff			Influential?
+	---------------------------------------------------------------------------
+	1577			Valentini	1600 (+60%)		Yes; formal outlier
+		CHECK THIS
+	1495	1539	Wang		1000 (+67%)		No
+		Dry grassland, linear, 1560 obs versus 2600 pred; checked
+	3406	5247	Yan			900 (+78%)		No; checked
+	2439/40	3647	Vose		~700 (+33%)		Yes; checked
+		Could 2439 and 2440 Rs_annuals have been flipped? :(
+	3852	5587	Misson		80 (+10%)		No
+	1346-8	3344	G-Guay		500 (-53%)		No
+		Very high Rs; perhaps email DGG
+	1543
+	869,72			Drewitt		
+	
+	To do: go through above table and double-check
+	Go through script output and double-check warnings/errors
+
+
+======================================
+8 December 2011
+
+	That's interesting: predicted points w/ mtr_out=T have a poorer fit
+		i.e. if model temp range doesn't encompass MAT, worse performance
+	Working my way through errors and warnings
+		...corrected all unknown units and models
+		Currently this model: R10 (L&T), R=a exp(b((1/c)-(1/(T-d)))
+			is inconsistently enterd; seems like C some places, K others?
+	Hmm, what's going on with power function? Look at all this with fresh eyes
+	Finish this up!
+	
+======================================
+13 December 2011
+
+	The residual plot for basic Rs_annual_pred ~ Rs_annual has bit of a fan shape. Investigated transformations:
+	-log(x) and log(y) both look terrible
+	-log-log a little better but still problems in residuals and normal Q-Q
+	-sqrtx looks bad
+	-sqrty is pretty good
+	-sqrt-sqrt is pretty good
+
+======================================
+Call with Michael Bahn 12-17-12
+
+1. Talk with Kali about piggybacking on vacation to go to his extremes workshop
+	- Innsbruck
+	- by end of Thursday
+
+2. MB proposal
+	- send more comprehensive feedback this week
+
+3. Send manuscript to him for friendly review
+	- potential confounding factors - be clear about them
+
+4. Rs analysis - for March 1
+	- commit to a week of high-time
+
+5. Rh workshop
+	- more important to write something more fundamental about Rh
+	- don't believe can measure Rh at all
+	- constrain Rh - how?
+	- not ignoring it, though
+	- build on Högberg et al.
+	
+6. Proposal possibility: intact cores -> can you estimate Rh?
+	- one possibility for a future proposal
+	- i.e. incubate at MAT
+	- process-based approach
+
+
+======================================
+Call with Michael Bahn 18 September 2013
+
+Re SRDB analysis
+
+I will try to have outline, etc., over next six weeks (end of October)
+Things to pursue:
+-- CMIP5 data
+-- Mark studies with year-round measurements? (strict independence)
+-- Ra studies not as good a match -> phenological bias/influence?
+-- residual as indication of how much Ra influenced by phenology/contributes to Rs?
+
+Workshop papers!!!
+-- get rolling
+-- synergy with other paper - !
+
+======================================
+2 January 2014
+
+Have been revising scripts, incorporating new version of SRDB
+TODO: compute new Bahn equation correctly
+TODO: in climate figure, what's the "Agriculture" point with MAP=0?
+TODO: deviation graph shows incorrect "0" point
+	- for points with Study_temp filled in, what are outliers? Can we explain those?
+
+======================================
+6 January 2014
+
+Looking at points with large errors (relatively and/or absolutely) that aren't due to mismatches between global climate data and local conditions (i.e., TAIR_dev < 0.5).
+Steps:
+	- are lat/long correct?
+	- is Rs_annual correct?
+	- check equation parameters
+	- check for equation temperature limits
+	- check what's computed by #2 script; does Rs in native units make sense?
+	- units conversion problem?
+
+Fixed studies by Pearson (wrong Rs_annual), Sanderman (eqn params wrong), Zerva and Tian (not site-specific parameters), Nishimura (agriculture), Conant, Froment, Kotroczo (soda lime). McDowell has big error but don't see a problem (ah, no, used his exponential instead of linear relationship; much better). 
+
+Zu and Jia from Maoershan report very high Rs_annual numbers for such a cold site, and for now I'm simply excluding them. -update: checked with author and they say numbers are OK
+
+Also: Richards #5021 (no site-specific equation)
+
+======================================
+10 January 2014
+
+To do
+	finish checking most problematic points
+	also see Jan 2nd todo list above
+	re-do report for Michael
+	

@@ -1,0 +1,101 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; I; SunOS 5.5.1 sun4m) [Netscape]">
+   <title>Global Moisture Indices Archive</title>
+</head>
+<body  bgcolor="#FFFFFF">
+<center>
+        <b> <h4> Willmott and Feddema's Moisture Index Archive:<br>  
+                Gridded Monthly Climatologies</h4></b>
+                      (Version 1.02)<br>
+<br>
+	produced and documented by<br>
+<br>
+              Cort J. Willmott and Kenji Matsuura<br>
+     (with support from NASA's Seasonal to Interannual ESIP)<br>
+<br>
+         For additional information concerning this archive,<br> 
+                      please contact us at:<br>
+<br>
+                 Center for Climatic Research<br>
+                    Department of Geography<br>
+                    University of Delaware<br>
+                      Newark, DE 19716<br>
+                       (302) 831-2294<br>
+<br>
+                           or<br>
+<br>
+                    kenjisan@udel.edu<br>
+<br>     
+<br>
+          Archive (Version 1.02) released July 1, 2001<br>
+</center>
+<hr width="100%">
+
+<h4>STATION AND GRIDDED DATA SOURCES:</h4>
+
+<div align="justify">
+Gridded (at a 0.5 x 0.5 degree resolution) mean monthly 
+total potential evapotranspiration (<i>Eo</i>) and unadjusted
+(for raingage undercatch) total precipitation (<i>P</i>) were taken from
+the <a href="README.wb2.html" target="_blanck">
+Terrestrial Water Balance Data Archive:  Regridded Monthly Climatologies 
+(V. 1.02)</a> and 
+the <a href="README.ghcn_clim2.html" target="_blank">
+Terrestrial Air Temperature and Precipitation: Monthly and Annual Climatologies 
+(V. 3.02)</a> which are also available from this web site.  Our estimates 
+of the average-monthly moisture indices from <i>Eo</i> and <i>P</i> 
+were made at (and are available for) only the land-surface grid points, which 
+number 85,794.</div>
+
+<h4>GRIDDED MOISTURE INDEX ESTIMATES:</h4>
+
+<div align="justify">    
+Using the gridded average-monthly
+total (<i>Eo</i>) and <i>P</i> values, 
+average-monthly moisture indices were calculated according to Willmott 
+and Feddema (1992) at the same resolution as the water-balance fields. 
+</div>
+
+<h4>ARCHIVE STRUCTURE:</h4>
+
+<div align="justify">
+There is one file containing the fields. Please note that each mean-annual moisture 
+index was computed from the 12-month totals of <i>Eo</i> 
+and <i>P</i>.</div> 
+<br>
+<center>
+<table cols=4 width="60%">
+<tr>
+<td width="10%">Field</td><td width="10%">Columns</td>
+<td width="40%"><div align="center">Variable</div></td>
+<td nowrap width="20%"><div align="right">Fortran Format</div></td></tr>
+<tr><td nowrap >1</td><td nowrap>1 - 8</td>
+<td nowrap>Longitude (decimal degrees)</td>
+<td><div align="right">F8.3</div></td></tr>
+<tr><td nowrap>2</td><td nowrap>9 - 16</td>
+<td nowrap>Latitude (decimal degrees)</td>
+<td><div align="right">F8.3</div></td></tr>
+<tr><td nowrap>3-14</td><td nowrap>17 - 112</td>
+<td nowrap>Monthly Moisture Indices</td>
+<td><div align="right">12F8.2</div></td></tr>
+<tr><td nowrap>15</td><td nowrap>113 - 120</td>
+<td nowrap>Annual Moisture Indices </td>
+<td><div align="right">F8.2</div></td></tr> 
+</table>
+</center>  
+<br><br>
+
+<h4>SELECTED REFERENCES:</h4>
+<div align="justify">
+Willmott, C. J., C. M. Rowe, and Y. Mintz, 1985.  Climatology of
+the Terrestrial Seasonal Water Cycle.  <i><b>Journal of Climatology</i></b>, 5,
+589-606.
+<br><br>
+Willmott, C. J. and J. J. Feddema, 1992. A More Rational Climatic 
+Moisture Index. <i><b>Professional Geographer</i></b>, 44(1), 84-88. 
+</div>
+</body>
+</html>
