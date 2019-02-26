@@ -42,3 +42,6 @@ outputs/
 
 # OS files
 .DS_Store
+
+# Climate data
+climate_data/
