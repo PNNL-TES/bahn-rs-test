@@ -93,6 +93,7 @@ printlog( "Welcome to", SCRIPT )
 loadlibs( c( "ncdf", "ggplot2", "reshape" ) )
 theme_set( theme_bw() )
 
+# Read in SRDB
 fn <- paste( SRDB_DIR, INFN, sep="/" )
 printlog( "Reading", fn )
 srdb <- read.csv( fn, stringsAsFactors=F )
@@ -151,6 +152,9 @@ for( i in 1:nrow( srdb ) ) {	# Could do this slightly more efficiently using ddp
 		printlog( "  ", yr, lonpos, latpos, timepos )
 		
 		pointcol <- "lightgrey"
+		
+		# Match SRDB with climate data source
+		
 		tair_val <- get_pointdata( air.mon.mean, "air", c( lonpos, latpos, timepos ), c( 1, 1, 12 ), boxsize=0 )
 		tair_sd <- get_pointdata( air.mon.mean, "air", c( lonpos, latpos, timepos ), c( 1, 1, 12 ), boxsize=0, FUN='sd' )
 		precip_val <- get_pointdata( precip.mon.total, "precip", c( lonpos, latpos, timepos ), c( 1, 1, 12 ), boxsize=0 )
