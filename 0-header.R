@@ -10,6 +10,7 @@ SEPARATOR		<- "-------------------"
 
 OUTCLIMDATA     <- paste0( OUTPUT_DIR, "summarized_climate.csv" )
 
+getwd()
 
 # -----------------------------------------------------------------------------
 # Time-stamped output function

@@ -6,6 +6,12 @@
 # record. It now does this using direct extraction from netCDF files, which is 
 # much faster than older nearest-neighbor method.
 
+# install.packages('ncdf4')
+# install.packages('ggplot2')
+# install.packages('reshape')
+
+loadlibs( c( "ncdf4", "ggplot2", "reshape" ) )
+
 source( "0-header.R" )
 
 SCRIPT			<- "1-bahn_climate_udel.R"
@@ -18,7 +24,7 @@ LATSIZE			<- 360
 PDSI_DIR		<- "~/Data/NCAR_PDSI/"
 PDSI_LONSIZE	<- 144
 PDSI_LATSIZE	<- 55
-SRDB_DIR 		<- "./" # "./srdb_20131218a/"
+SRDB_DIR 		<- "./srdb_20131218a/" #"./" # 
 
 # -----------------------------------------------------------------------------
 # Open a netCDF file and return handle
@@ -90,7 +96,6 @@ filtration1 <- function( srdb ) {
 sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
 printlog( "Welcome to", SCRIPT )
 
-loadlibs( c( "ncdf", "ggplot2", "reshape" ) )
 theme_set( theme_bw() )
 
 # Read in SRDB

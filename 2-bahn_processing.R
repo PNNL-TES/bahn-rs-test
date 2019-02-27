@@ -4,6 +4,8 @@
 # Take Rs database and compute RS@MAT: soil respiration at mean annual air temperature
 
 source( "0-header.R" )
+# install.packages("stringr")
+loadlibs( c( "ggplot2", "stringr" ) )
 
 SCRIPT			<- "2-bahn_processing.R"
 INFN 			<- "srdb-data-climate.csv"
@@ -169,7 +171,6 @@ compute_rs_mat <- function( s ) {
 sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
 printlog( "Welcome to", SCRIPT )
 
-loadlibs( c( "ggplot2", "stringr" ) )
 theme_set( theme_bw() )
 
 printlog( "Reading", INFN )
