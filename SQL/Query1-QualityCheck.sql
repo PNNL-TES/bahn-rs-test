@@ -58,7 +58,7 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 -- Model_paramB should change to log(Model_paramB)/10
 -- Model_paramC should change to 10
 SELECT log(Model_paramB)/10 FROM SRDBV4 WHERE [study_number] = 7290
-UPDATE [SRDBV4] SET Model_paramB = log(Model_paramB)/10	WHERE [study_number] = 7290
+-- UPDATE [SRDBV4] SET Model_paramB = log(Model_paramB)/10	WHERE [study_number] = 7290
 UPDATE [SRDBV4] SET Model_type = 'Exponential, R=a exp(b(T-c))', Model_paramC = 10	WHERE [study_number] = 7290
 
 /**********************************************************************************************
@@ -249,7 +249,7 @@ Need discuss
 SELECT SRDBV4.Model_type, Model_paramC, Study_temp, TAnnual_Del, MAT From SRDBV4 WHERE Study_number = 6479
 
 /**********************************************************************************************
-Output data
+Output data: SRDB
 ***********************************************************************************************/
 SELECT * FROM [dbo].[SRDBV4]
 WHERE Latitude IS NOT NULL 
@@ -262,3 +262,11 @@ WHERE Latitude IS NOT NULL
 	AND Model_paramB IS NOT NULL
 	AND Manipulation = 'None'
 ORDER BY Study_number
+
+
+/**********************************************************************************************
+Summarized climate data
+***********************************************************************************************/
+
+SELECT [Latitude] ,[Longitude], [MAT], [MAP]
+FROM [DelClimateDB].[dbo].[Global2010PT]

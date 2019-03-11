@@ -332,7 +332,7 @@ printlog( "Diagnostic plot..." )
 srdb$Rs_annual_bahn_err <- with( srdb, round( abs( ( Rs_annual_bahn-Rs_annual ) / Rs_annual ), 2 ) )
 srdb$higherr <- srdb$Rs_annual_bahn_err > .9 & !is.na( srdb$Rs_annual_bahn_err )
 srdb[ srdb$higherr, "labl" ] <- srdb[ srdb$higherr, "Record_number" ]
-unique(srdb$labl)
+# unique(srdb$labl)
 #srdb[ srdb$higherr, "labl" ] <- srdb[ srdb$higherr, "err" ]
 srdb$TAIR_LTM_dev <- with( srdb, abs( MAT_Del - MAT ) )
 srdb$TAIR_dev <- with( srdb, abs( TAnnual_Del - Study_temp ) )
@@ -348,6 +348,8 @@ saveplot( "2-Diagnostic3", p + geom_point( aes( color=( TAIR_dev ) ) ) )
 saveplot( "2-Diagnostic4", p + geom_point( aes( color=( Ecosystem_type ) ) ) )
 
 printlog( "Writing", OUTFN )
+
+srdb <- srdb[!is.na(srdb$Rs_annual_bahn),]
 write.csv( srdb, OUTFN, row.names=F )
 
 printlog( "All done with", SCRIPT )
