@@ -17,6 +17,70 @@ OUTFN 			<- "srdb-data-final.csv"
 TDIFF_MAX 		<- 2	# max diff allowed btwn global dataset TAIR and observed
 
 
+
+# -----------------------------------------------------------------------------
+# Filter out data: need more work, not figure out what this try to do
+# Some part have finished in 2-bahn_processing.R
+# need update 1
+# -----------------------------------------------------------------------------
+
+# srdb_02 <- subset( srdb, !mtr_out )
+
+filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
+  fields <- c( 	"Record_number", "Study_number",
+                "Author", "Site_name", "Study_midyear", "YearsOfData", 
+                "Latitude", "Longitude", "Biome", "Ecosystem_type", 
+                "MAT", "MAP", "Study_temp", "Study_precip",
+                "Meas_interval", "Annual_coverage", "Meas_method",
+                "Rs_annual", "Rs_annual_err", "Rs_wet", "Rs_dry", "RC_annual",
+                "Model_type", "R10",
+                "TAnnual_Del", # "TAIR_SD", 
+                "PAnnual_Del", # "PRECIP_SD", 
+                # "TAIR_LTM", "PRECIP_LTM", # "PDSI",
+                "mtr_out", "Rs_TAIR_units", "Rs_TAIR", "Rs_annual_bahn", "TAIR_dev", "TAIR_LTM_dev"
+  )
+  
+  if( !quiet ) printlog( "Removing extraneous fields..." )
+  srdb <- srdb_orig[ fields ]		
+  printdims( srdb )
+  
+  srdb <- subset( srdb, !is.na( Rs_annual ) & !is.na( Rs_annual_bahn ) )
+  if( !quiet ) printlog( "Filtered for Rs_annual:", nrow( srdb ) )
+  srdb <- subset( srdb, !mtr_out ) # filt mtr_out == true (out of temperature range)
+  if( !quiet ) printlog( "Filtered for mtr_out:", nrow( srdb ) )
+  srdb <- subset( srdb, Meas_method %in% c( "IRGA", "Gas chromatography" ) )
+  if( !quiet ) printlog( "Filtered for Meas_method:", nrow( srdb ) )
+  srdb <- subset( srdb, Ecosystem_type != "Agriculture" )
+  if( !quiet ) printlog( "Filtered for !Agriculture:", nrow( srdb ) )
+  
+  # (Temporary?) excludes; values weird but can't find anything wrong
+  srdb <- subset( srdb, !( Study_number %in% c( 
+    5278, 		# Zu et al., Maoershan: reported annual fluxes very high
+    # checked, seems like nothing wrong
+    3886,		# Jia et al., Maoershan: reported annual fluxes very high
+    # checked, seems like nothing wrong
+    # 6479,		# TEMPORARY - remove at office, model type updated
+    6292,		# TEMPORARY - remove at office
+    2349		# Lavigne, Canada, looks OK not sure why so off
+  ) ) )
+  if( !quiet ) printlog( "Filtered problem studies:", nrow( srdb ) )
+  
+  
+  if( !quiet ) {
+    printlog( "If the climate data diverges from on-the-ground climate," )
+    printlog( "this is a problem obviously." )
+    printlog( "Diff Temp MAT  (# records)" )
+    for( i in 0:9 ) 
+      printlog( i, sum( srdb$TAIR_LTM_dev > i, na.rm=T ), sum( srdb$TAIR_dev > i, na.rm=T ) )
+  }
+  srdb <- subset( srdb, is.na( MAT ) | TAIR_LTM_dev <= tdiff_max )
+  printlog( "Filtered for MAT temp diff <=", tdiff_max,":", nrow( srdb ) )
+  srdb <- subset( srdb, is.na( Study_temp ) | TAIR_dev <= tdiff_max )
+  printlog( "Filtered for Study_temp temp diff <=", tdiff_max,":", nrow( srdb ) )
+  srdb
+} # filtration
+
+
 # -----------------------------------------------------------------------------
 # Re-compute the relationship between Rs_annual and RS@MAT
 compute_Rs_annual_bahn <- function( sdata, name="" ) {
@@ -231,7 +295,7 @@ plotdata <- function( sdata, name ) {
 
 # -----------------------------------------------------------------------------
 # Main figure comparing Rs_annual with Rs_annual_bahn
-# need update 1
+# Updateed
 # -----------------------------------------------------------------------------
 Rs_comparion_figure <- function( srdb, name="" ) {
 	printlog( SEPARATOR )
@@ -284,29 +348,39 @@ loadlibs( c( "ggplot2", "reshape" ) )
 theme_set( theme_bw() )
 
 printlog( "Reading", INFN, "..." )
+
+
 srdb_orig <- read.csv( INFN, stringsAsFactors=F )
+srdb <- srdb_orig
+srdb_05 <- filtration3( srdb_orig, 0.5, quiet=T )
 
 # Climate space figure
 figA <- climate_figure( srdb_orig )
-
-# Finished in 2-bahn_climate_udel.R
-# srdb <- filtration3( srdb_orig ) 
-srdb <- srdb_orig
 
 # calculate sdata$TAIR_SD
 # colnames (srdb)
 srdb$TAIR_SD <- srdb$Study_temp - srdb$TAnnual_Del
 srdb$PRECIP_SD <- srdb$Study_precip - srdb$PAnnual_Del 
 
-sdata <- srdb
+# sdata <- srdb
 
 # How accurately can the Bahn (2010) relationship predict observed annual Rs?
 mods <- Rs_annual_bahn_test( srdb )	
 m <- mods[[ 1 ]]
 m1 <- mods[[ 2 ]]
 
+# How accurately can the Bahn (2010) relationship predict observed annual Rs?
+mods_05 <- Rs_annual_bahn_test( srdb_05 )	
+m_05 <- mods_05[[ 1 ]]
+m1_05 <- mods_05[[ 2 ]]
+
 # Make a nice figure of this
 figB <- Rs_comparion_figure( srdb )
+
+# -----------------------------------------------------------------------------
+# Main figure comparing Rs_annual with Rs_annual_bahn
+# After filtration
+figB_05 <- Rs_comparion_figure( srdb_05 )
 
 # How do autotrophic- versus heterotrophic-dominated systems differ?
 figC <- RC_test( srdb )
@@ -322,104 +396,14 @@ compute_Rs_annual_bahn( srdb )
 # Do ecosystems with more-variable climates exhibit different trends?
 climate_variability_test( srdb )
 
+# Finished in 2-bahn_climate_udel.R
+# srdb <- filtration3( srdb_orig ) 
 
-# TODO: re-compute Bahn relationship CORRECTLY!!!!!
-
-printlog( SEPARATOR )
-printlog( "All done with", SCRIPT )
-sink()
-
-
-
-
-
-# -----------------------------------------------------------------------------
-# Filter out data: need more work, not figure out what this try to do
-# Some part have finished in 2-bahn_processing.R
-# need update 1
-# -----------------------------------------------------------------------------
-
-filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
-  fields <- c( 	"Record_number", "Study_number",
-                "Author", "Site_name", "Study_midyear", "YearsOfData", 
-                "Latitude", "Longitude", "Biome", "Ecosystem_type", 
-                "MAT", "MAP", "Study_temp", "Study_precip",
-                "Meas_interval", "Annual_coverage", "Meas_method",
-                "Rs_annual", "Rs_annual_err", "Rs_wet", "Rs_dry", "RC_annual",
-                "Model_type", "R10",
-                "TAIR", "TAIR_SD", "PRECIP", "PRECIP_SD", "TAIR_LTM", "PRECIP_LTM", "PDSI",
-                "mtr_out", "Rs_TAIR_units", "Rs_TAIR", "Rs_annual_bahn", "TAIR_dev", "TAIR_LTM_dev"
-  )
-  if( !quiet ) printlog( "Removing extraneous fields..." )
-  srdb <- srdb_orig[ fields ]		
-  printdims( srdb )
-  
-  srdb <- subset( srdb, !is.na( Rs_annual ) & !is.na( Rs_annual_bahn ) )
-  if( !quiet ) printlog( "Filtered for Rs_annual:", nrow( srdb ) )
-  srdb <- subset( srdb, !mtr_out )
-  if( !quiet ) printlog( "Filtered for mtr_out:", nrow( srdb ) )
-  srdb <- subset( srdb, Meas_method %in% c( "IRGA", "Gas chromatography" ) )
-  if( !quiet ) printlog( "Filtered for Meas_method:", nrow( srdb ) )
-  srdb <- subset( srdb, Ecosystem_type != "Agriculture" )
-  if( !quiet ) printlog( "Filtered for !Agriculture:", nrow( srdb ) )
-  
-  # (Temporary?) excludes; values weird but can't find anything wrong
-  srdb <- subset( srdb, !( Study_number %in% c( 
-    5278, 		# Zu et al., Maoershan: reported annual fluxes very high
-    # checked, seems like nothing wrong
-    3886,		# Jia et al., Maoershan: reported annual fluxes very high
-    # checked, seems like nothing wrong
-    6479,		# TEMPORARY - remove at office
-    6292,		# TEMPORARY - remove at office
-    2349		# Lavigne, Canada, looks OK not sure why so off
-  ) ) )
-  if( !quiet ) printlog( "Filtered problem studies:", nrow( srdb ) )
-  
-  
-  if( !quiet ) {
-    printlog( "If the climate data diverges from on-the-ground climate," )
-    printlog( "this is a problem obviously." )
-    printlog( "Diff Temp MAT  (# records)" )
-    for( i in 0:9 ) 
-      printlog( i, sum( srdb$TAIR_LTM_dev > i, na.rm=T ), sum( srdb$TAIR_dev > i, na.rm=T ) )
-  }
-  srdb <- subset( srdb, is.na( MAT ) | TAIR_LTM_dev <= tdiff_max )
-  printlog( "Filtered for MAT temp diff <=", tdiff_max,":", nrow( srdb ) )
-  srdb <- subset( srdb, is.na( Study_temp ) | TAIR_dev <= tdiff_max )
-  printlog( "Filtered for Study_temp temp diff <=", tdiff_max,":", nrow( srdb ) )
-  srdb
-} # filtration
-
-
-# -----------------------------------------------------------------------------
-# What's the effect of drought? need new drought data
-# Need another drought index and re-analysis
-# need update 2
-# -----------------------------------------------------------------------------
-
-PDSI_test <- function( sdata ) {
-  printlog( SEPARATOR )
-  printlog( "How does drought affect this relationship? (discrete)" )
-  sdata$PDSI2 <- cut( sdata$PDSI, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
-  m1 <- lm( Rs_annual_bahn~Rs_annual * PDSI2, data=sdata )
-  print( summary( m1 ) )
-  printlog( "How does drought affect this relationship? (continuous)" )
-  m2 <- lm( Rs_annual_bahn~Rs_annual * PDSI, data=sdata )
-  print( summary( m2 ) )
-  
-  p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=PDSI2 )
-  p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-  print( p )
-  saveplot( "3-PDSI_effect" )	
-}
-
-
-# PDSI_test( srdb ) # need a new PDSI data
 
 printlog( SEPARATOR )
 ODD_ERR <- 30 # %
 printlog( "Computing oddballs, threshold of", ODD_ERR, "%" )
-srdb_05 <- filtration3( srdb_orig, 0.5, quiet=T )
+
 srdb_05$Rs_err <- round( with( srdb_05, ( Rs_annual_bahn-Rs_annual ) / Rs_annual ) * 100, 0 )
 srdb_05$Rs_dev <- with( srdb_05, Rs_annual_bahn-Rs_annual )
 odds <- subset( srdb_05, abs( Rs_err )>ODD_ERR )
@@ -435,3 +419,42 @@ p2 <- p2 + geom_text( aes( label=paste( Author, Study_number ) ), size=3, vjust=
 p2 <- p2 + ggtitle( paste0( "within 0.5C, but Rs_err > ", ODD_ERR, "%" ) )
 print( p2 )
 saveplot( "3-oddballs2" )
+
+
+# TODO: re-compute Bahn relationship CORRECTLY!!!!!
+
+printlog( SEPARATOR )
+printlog( "All done with", SCRIPT )
+sink()
+
+
+
+# -----------------------------------------------------------------------------
+# What's the effect of drought? need new drought data
+# Need another drought index and re-analysis
+# need update 2
+# -----------------------------------------------------------------------------
+
+# PDSI_test <- function( sdata ) {
+#   printlog( SEPARATOR )
+#   printlog( "How does drought affect this relationship? (discrete)" )
+#   sdata$PDSI2 <- cut( sdata$PDSI, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
+#   m1 <- lm( Rs_annual_bahn~Rs_annual * PDSI2, data=sdata )
+#   print( summary( m1 ) )
+#   printlog( "How does drought affect this relationship? (continuous)" )
+#   m2 <- lm( Rs_annual_bahn~Rs_annual * PDSI, data=sdata )
+#   print( summary( m2 ) )
+#   
+#   p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=PDSI2 )
+#   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
+#   print( p )
+#   saveplot( "3-PDSI_effect" )	
+# }
+
+
+# PDSI_test( srdb ) # need a new PDSI data
+
+
+
+
+

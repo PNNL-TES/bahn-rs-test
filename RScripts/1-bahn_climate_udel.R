@@ -26,7 +26,7 @@ OUTFN 			<- "srdb-data-climate.csv"
 
 
 # ==============================================================================
-# Main: begin
+# Climate SD: begin
 # To do this in SQL
 
 # sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
@@ -142,7 +142,7 @@ OUTFN 			<- "srdb-data-climate.csv"
 # write.csv( d, OUTCLIMDATA, row.names=F )
 
 # ==============================================================================
-# Main end
+# Climate end
 
 
 # ==============================================================================

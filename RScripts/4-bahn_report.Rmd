@@ -57,7 +57,13 @@ intercept_test <- summary( m )$coefficients[ 1, 4 ]
 slope_test <- summary( m1 )$coefficients[ 2, 4 ]
 ```
 
-Answer: Extremely well! The relationship between predicted SR (via SR at MAT) and reported annual SR is 1:1, with a slope=1 (P=`r round( slope_test, 3 )`) and intercept=0 (P=`r round( intercept_test, 3 )`). There is significant unexplained variability, with R^2^=`r round( summary( m )$r.squared, 2 )` and RSE of `r round( summary( m )$sigma, 0 )` g C m^-2^ yr^-1^.
+```{r mainmodelfit, echo=FALSE}
+summary( m_05 )    # prepared for us by 3-bahn_analysis.R, called above
+intercept_test <- summary( m_05 )$coefficients[ 1, 4 ]
+slope_test <- summary( m1_05 )$coefficients[ 2, 4 ]
+```
+Answer: Need improve! Both models' slope close to 1, but differ from 1, intercept close to 0 but differ from 0. 
+The relationship between predicted SR (via SR at MAT) and reported annual SR is 1:1, with a slope=1 (P=`r round( slope_test, 3 )`) and intercept=0 (P=`r round( intercept_test, 3 )`). There is significant unexplained variability, with R^2^=`r round( summary( m )$r.squared, 2 )` and RSE of `r round( summary( m )$sigma, 0 )` g C m^-2^ yr^-1^.
 
 **Figure B.** Comparison between reported SR and SR inferred by Bahn et al. (2010) method. Dashed line is 1:1. Fitted solid line is surrounded by grey model error. Horizontal error bars show error (typically plot-to-plot), when reported by individual studies.
 ```{r figureB_prediction, echo=FALSE}
