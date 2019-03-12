@@ -25,6 +25,7 @@ TDIFF_MAX 		<- 2	# max diff allowed btwn global dataset TAIR and observed
 # -----------------------------------------------------------------------------
 
 # srdb_02 <- subset( srdb, !mtr_out )
+# colnames (srdb)
 
 filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
   fields <- c( 	"Record_number", "Study_number",
@@ -34,9 +35,10 @@ filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
                 "Meas_interval", "Annual_coverage", "Meas_method",
                 "Rs_annual", "Rs_annual_err", "Rs_wet", "Rs_dry", "RC_annual",
                 "Model_type", "R10",
-                "TAnnual_Del", # "TAIR_SD", 
-                "PAnnual_Del", # "PRECIP_SD", 
-                # "TAIR_LTM", "PRECIP_LTM", # "PDSI",
+                "TAnnual_Del", "TAIR_SD", 
+                "PAnnual_Del", "PRECIP_SD", 
+                # "TAIR_LTM", "PRECIP_LTM", 
+                "SPI",
                 "mtr_out", "Rs_TAIR_units", "Rs_TAIR", "Rs_annual_bahn", "TAIR_dev", "TAIR_LTM_dev"
   )
   
@@ -293,6 +295,33 @@ plotdata <- function( sdata, name ) {
 	invisible( sdata )
 }
 
+
+# -----------------------------------------------------------------------------
+# What's the effect of drought? need new drought data
+# Need another drought index and re-analysis
+# need update 2
+# -----------------------------------------------------------------------------
+
+SPI_test <- function( sdata ) {
+  printlog( SEPARATOR )
+  printlog( "How does drought affect this relationship? (discrete)" )
+  sdata$SPI2 <- cut( sdata$SPI, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
+  m1 <- lm( Rs_annual_bahn~Rs_annual * SPI2, data=sdata )
+  print( summary( m1 ) )
+  printlog( "How does drought affect this relationship? (continuous)" )
+  m2 <- lm( Rs_annual_bahn~Rs_annual * SPI, data=sdata )
+  print( summary( m2 ) )
+  
+  p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=SPI2 )
+  p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
+  print( p )
+  saveplot( "3-SPI_effect" )
+}
+
+
+
+
+
 # -----------------------------------------------------------------------------
 # Main figure comparing Rs_annual with Rs_annual_bahn
 # Updateed
@@ -359,8 +388,6 @@ figA <- climate_figure( srdb_orig )
 
 # calculate sdata$TAIR_SD
 # colnames (srdb)
-srdb$TAIR_SD <- srdb$Study_temp - srdb$TAnnual_Del
-srdb$PRECIP_SD <- srdb$Study_precip - srdb$PAnnual_Del 
 
 # sdata <- srdb
 
@@ -399,6 +426,8 @@ climate_variability_test( srdb )
 # Finished in 2-bahn_climate_udel.R
 # srdb <- filtration3( srdb_orig ) 
 
+# Do drought effects different trends?
+SPI_test( srdb ) # need a new SPI data
 
 printlog( SEPARATOR )
 ODD_ERR <- 30 # %
@@ -427,32 +456,6 @@ printlog( SEPARATOR )
 printlog( "All done with", SCRIPT )
 sink()
 
-
-
-# -----------------------------------------------------------------------------
-# What's the effect of drought? need new drought data
-# Need another drought index and re-analysis
-# need update 2
-# -----------------------------------------------------------------------------
-
-# PDSI_test <- function( sdata ) {
-#   printlog( SEPARATOR )
-#   printlog( "How does drought affect this relationship? (discrete)" )
-#   sdata$PDSI2 <- cut( sdata$PDSI, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
-#   m1 <- lm( Rs_annual_bahn~Rs_annual * PDSI2, data=sdata )
-#   print( summary( m1 ) )
-#   printlog( "How does drought affect this relationship? (continuous)" )
-#   m2 <- lm( Rs_annual_bahn~Rs_annual * PDSI, data=sdata )
-#   print( summary( m2 ) )
-#   
-#   p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=PDSI2 )
-#   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-#   print( p )
-#   saveplot( "3-PDSI_effect" )	
-# }
-
-
-# PDSI_test( srdb ) # need a new PDSI data
 
 
 

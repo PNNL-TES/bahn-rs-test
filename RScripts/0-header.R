@@ -8,7 +8,7 @@ OUTPUT_DIR		<- "outputs/"
 LOG_DIR			<- "logs/"
 SEPARATOR		<- "-------------------"
 
-OUTCLIMDATA     <- paste0( OUTPUT_DIR, "summarized_climate.csv" )
+OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
 
 getwd()
 

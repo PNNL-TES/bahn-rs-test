@@ -27,8 +27,8 @@ conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFacto
 # ==============================================================================
 
 
-n = 1518
-srdb$Study_temp
+# n = 1518
+# srdb$Study_temp
 
 subtest_1 <- function (n) {
   subtest <- srdb[ which (srdb$Study_number == n), 
@@ -81,8 +81,8 @@ subtest_2 <- function (mot) {
   return (subtest)
 }
 
-subtest_1 (1518)
-subtest_2 ("Q10, R=a exp((bT-c)/10)")
+# subtest_1 (1518)
+# subtest_2 ("Q10, R=a exp((bT-c)/10)")
 
 
 # -----------------------------------------------------------------------------

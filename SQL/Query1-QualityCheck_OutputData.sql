@@ -251,7 +251,21 @@ SELECT SRDBV4.Model_type, Model_paramC, Study_temp, TAnnual_Del, MAT From SRDBV4
 /**********************************************************************************************
 Output data: SRDB
 ***********************************************************************************************/
-SELECT * FROM [dbo].[SRDBV4]
+
+--ALTER TABLE [SRDBV4] ADD PRECIP_SD Numeric (18,3), TAIR_SD Numeric (18,3), SPI Numeric (18,3)
+
+UPDATE [SRDBV4] SET [SRDBV4].PRECIP_SD = P.PRECIP_SD, [SRDBV4].TAIR_SD = P.TAIR_SD
+FROM [SRDBV4] AS S
+INNER JOIN [DelClimateDB].[dbo].[Global_P] AS P
+ON P.Latitude = S.Lat_Round AND P.Longitude = S.Long_Round
+
+UPDATE [SRDBV4] SET [SRDBV4].SPI = P.SPI
+FROM [SRDBV4] AS S
+INNER JOIN [DelClimateDB].[dbo].[Global_P] AS P
+ON P.Latitude = S.Lat_Round AND P.Longitude = S.Long_Round AND P.[Year] = S.[Year]
+
+
+SELECT * FROM [SRDBStagging].[dbo].[SRDBV4]
 WHERE Latitude IS NOT NULL 
 	AND Longitude IS NOT NULL 
 	AND Study_midyear IS NOT NULL
