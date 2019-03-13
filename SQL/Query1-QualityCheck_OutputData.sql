@@ -222,6 +222,75 @@ UPDATE [SRDBV4] SET Model_type = 'Exponential, R=a exp(b(T-c))' WHERE [study_num
 
 
 
+
+/* *****************************************************************************************
+# Find out studies wiht Rs_Annual_Bahn = 0, but Rs_Annual is != 0
+ ******************************************************************************************/
+
+--# study number 3733
+--# The author reported the model wrong in Fig 3, these models should be exponential model rather than power function
+--# In the fig caption, the author said is exponential model, and if use exponential model, I got the same figure
+--# If use the power function, it is way off from the figure
+--# Model type shuld change to "Exponential, R=a exp(b(T-c))"
+
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual From SRDBV4 WHERE Study_number = 3733
+UPDATE [SRDBV4] SET Model_type = 'Exponential, R=a exp(b(T-c))' WHERE [study_number] = 3733
+
+
+--# study number 5317
+--# According to Table 3 and description of Equation (1) 
+-- Model_paramC = 10 (unit should be in C)
+--# Model type shuld change to "R10 (L&T), R=a exp(b((1/(c-d))-(1/(T-d)))"
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual 
+	From SRDBV4 WHERE Study_number = 5317
+UPDATE [SRDBV4] SET Model_type = 'R10 (L&T), R=a exp(b((1/(c-d))-(1/(T-d)))', Model_paramC = 10 WHERE [study_number] = 5317
+
+
+--# Study number 5766
+--# According to Figure 4
+--# Soil temperature is not in K
+--# Model_type change to: "R10 (L&T), R=a exp(b((1/c)-(1/(T-d)))"
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual 
+	From SRDBV4 WHERE Study_number = 5766
+UPDATE [SRDBV4] SET Model_type = 'Arrhenius, R=a exp(-b/c(T-d))' WHERE [study_number] = 5766
+
+
+--# Study number 6219
+--# Table 2 and equation 7
+--# Model_paramC change to 0
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units From SRDBV4 WHERE Study_number = 6219
+UPDATE [SRDBV4] SET Model_paramC = 0 WHERE [study_number] = 6219
+
+--# Study number 6272
+--# Table 3 and 4, the unit in Figure 4 should be wrong
+--# Unit change to "umol CO2/m2/s"
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units From SRDBV4 WHERE Study_number = 6272
+UPDATE [SRDBV4] SET Model_output_units = 'umol CO2/m2/s' WHERE [study_number] = 6272
+
+--# Study number 6566
+--# According to Ewuation 8 in J. Lloyd, J.A. Taylor, On the temperature dependence of soil respiration, Funct. Ecol. 8 (1994) 315 e 323.
+--# Equation (3) in this study should be wrong
+--# Model change to "R10 (L&T), R=a exp(b/((273.15+c)*8.314)*(1-(273.15+c)/T)), T in K"
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units From SRDBV4 WHERE Study_number = 6566
+UPDATE [SRDBV4] SET Model_type = 'R10 (L&T), R=a exp(b/((273.15+c)*8.314)*(1-(273.15+c)/T)), T in K' WHERE [study_number] = 6566
+
+
+--# Study number 8866
+--# According to Table 1, unit here should be "g CO2/m2/hr" ?
+--# Unit change to "g CO2/m2/hr"
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units From SRDBV4 WHERE Study_number = 8866
+UPDATE [SRDBV4] SET Model_output_units = 'g CO2/m2/hr' WHERE [study_number] = 8866
+
+--# Study number 2182
+-- # checked, TS TA issue
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units From SRDBV4 WHERE Study_number = 2182
+
+
 /**********************************************************************************************
 Output data
 ***********************************************************************************************/

@@ -57,13 +57,14 @@ filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
   
   # (Temporary?) excludes; values weird but can't find anything wrong
   srdb <- subset( srdb, !( Study_number %in% c( 
-    5278, 		# Zu et al., Maoershan: reported annual fluxes very high
-    # checked, seems like nothing wrong
-    3886,		# Jia et al., Maoershan: reported annual fluxes very high
-    # checked, seems like nothing wrong
-    # 6479,		# TEMPORARY - remove at office, model type updated
-    6292,		# TEMPORARY - remove at office
-    2349		# Lavigne, Canada, looks OK not sure why so off
+    # 5278, 		# Zu et al., Maoershan: reported annual fluxes very high
+    # # checked, seems like nothing wrong
+    # 3886,		# Jia et al., Maoershan: reported annual fluxes very high
+    # # checked, seems like nothing wrong
+    # # 6479,		# TEMPORARY - remove at office, model type updated
+    # 6292,		# TEMPORARY - remove at office
+    # 2349		# Lavigne, Canada, looks OK not sure why so off
+    2182 # checked, TS TA issue
   ) ) )
   if( !quiet ) printlog( "Filtered problem studies:", nrow( srdb ) )
   
