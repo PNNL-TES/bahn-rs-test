@@ -158,7 +158,7 @@ compute_rs_mat <- function( s ) {
 		  else if( mt == "Arrhenius, R=a*exp(-b/RT), T in K" ) {
 		  rs <- a * exp(-b /(0.008314*(T+273.15)) )
 		}
-		# Added model type 9: "Arrhenius, R=a*exp(b/c (1/d-1/T)), T in K" 
+		# Added model type 2: "Arrhenius, R=a*exp(b/c (1/d-1/T)), T in K" 
 		# c = R = 8.134, d = Tref = 283.16
 		  else if( mt == "Arrhenius, R=a*exp(b/c (1/d-1/T)), T in K" ) {
 		  rs <- a * exp( b / c * (1/d - 1/(T+273.15) ) )
@@ -176,15 +176,15 @@ compute_rs_mat <- function( s ) {
 		} else if( mt == "Exponential (other), ln(R)=a+exp(b(T-c))" ) {
 			rs <- exp( a + exp( b * ( T - c ) ) )
 		} 
-		  # added model 7
+		# Added model 3
 		  else if( mt == "Exponential (other), ln(R)=a+b(T+d)+c(T+d)^2" ) {
 		  rs <- exp(a + b * (T + d) + c * (T + d)^2)
 		  }
-		# added model 8
+		# Added model 4
 		  else if( mt == "Exponential (other), R=a*b^(ct)" ) {
 		  rs <- a * b ^ ( c*T )
 		  }
-		# add model 10, "Exponential (other), R=a*exp(ln(b (T-c)/c))"
+		# Added model 5, "Exponential (other), R=a*exp(ln(b (T-c)/c))"
 		  else if( mt == "Exponential (other), R=a*exp(ln(b (T-c)/c))" ) {
 		  rs <- a * exp( log( b *(T - c)/c ) )
 		}
@@ -203,11 +203,11 @@ compute_rs_mat <- function( s ) {
 		  else if( mt == "Exponential, R=a exp(b(T-c))" ) {
 			rs <- a * exp( b * ( T - c ) )
 		} 
-		# Added model 3 - "Exponential, R=exp(a+bT)"
+		# Added model 6 - "Exponential, R=exp(a+bT)"
 		  else if( mt == "Exponential, R=exp(a+bT)" ) {
 		  rs <- exp( a + b * T )
 		}
-		# Added model 6 - "Exponential, R=a+b exp(T/c)"
+		# Added model 7 - "Exponential, R=a+b exp(T/c)"
 		else if( mt == "Exponential, R=a+b exp(T/c)" ) {
 		  rs <- a + b * exp( T/c )
 		}
@@ -217,7 +217,7 @@ compute_rs_mat <- function( s ) {
 			rs <- a + b * ( T - c ) 
 		} 
 		
-		# Added model 4 - Linear, R=a+b(T^2)
+		# Added model 8 - Linear, R=a+b(T^2)
 		  else if( mt == "Linear, R=a+b(T^2)" ) {
 		  rs <- a + b * ( T^2 ) 
 		}	else if( mt == "Logistic, R=a/(1+b exp(-cT))" ) {
@@ -232,11 +232,11 @@ compute_rs_mat <- function( s ) {
 			rs <- a ^ ( b * ( T - c ) )
 		} 
 		
-		# Add model 5 'Power, R=a T^2'
+		# Added model 9 'Power, R=a T^2'
 		  else if( mt == "Power, R=c T^2" ) {
 		  rs <- c * T^2
 		  } 
-		# # subtest$a * subtest$b^( (subtest$T - 24)/10 ) # study nnumber 7238
+		# # Added model type 10, study nnumber 7238
 		  else if( mt == "Q10, R=a exp((bT-c)/10)" ) {
 			rs <- a * exp( ( b * T - c ) / 10.0 )
 		} else if( mt == "Q10, R=a b^((T-c)/10)" ) {
@@ -244,11 +244,11 @@ compute_rs_mat <- function( s ) {
 		} else if( mt == "R10 (L&T), R=a exp(b((1/c)-(1/(T-d)))" ) {
 			rs <- a * exp( b * ( ( 1 / c ) - ( 1 / ( T-d ) ) ) )
 		} 
-		  # Added model type 11 , study number 5371
-		else if( mt == "R10 (L&T), R=a exp(b((1/(c-d))-(1/(T-d)))" ) {
+		  # Added model type 11, study number 5371
+		  else if( mt == "R10 (L&T), R=a exp(b((1/(c-d))-(1/(T-d)))" ) {
 		  rs <- a * exp( b * ( ( 1 / (c-d) ) - ( 1 / ( T-d ) ) ) )
 		}
-		
+		  # Added model type 12
 		  else if( mt == "R10 (L&T), R=a exp(b((1/c)-(1/(T-d))), T in K" ) {
 			rs <- a * exp( b * ( ( 1 / c ) - ( 1 / ( ( T+273.15 ) - d ) ) ) )
 		} else if( mt == "R10 (L&T), R=a exp(b/((273.15+c)*8.314)*(1-(273.15+c)/T)), T in K" ) {

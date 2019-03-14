@@ -14,8 +14,6 @@ SEPARATOR		<- "-------------------"
 
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
 
-getwd()
-
 # -----------------------------------------------------------------------------
 # Time-stamped output function
 printlog <- function( msg="", ..., ts=TRUE, cr=TRUE ) {
@@ -65,3 +63,4 @@ if( !file.exists( LOG_DIR ) ) {
 	printlog( "Creating", LOG_DIR )
 	dir.create( LOG_DIR )
 }
+

@@ -346,10 +346,58 @@ WHERE Latitude IS NOT NULL
 	AND Manipulation = 'None'
 ORDER BY Study_number
 
+/**********************************************************************************************
+SPI IS NULL Issue
+***********************************************************************************************/
 
+SELECT Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+	AND Study_TS_Annual IS NOT NULL
+	AND [dbo].[SRDBV4].SPI IS NULL
+ORDER BY Lat_Round, Long_Round
+
+-- 1
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 6.75 AND Longitude = 2.25
+SELECT Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 6.25 AND Long_Round = 2.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 225.756, TAIR_SD = 0.391, SPI = -0.02 WHERE Lat_Round = 6.25 AND Long_Round = 2.25
+
+--2
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 28.25 AND Longitude = -16.75
+SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 28.75 AND Long_Round = -27.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 126.968, TAIR_SD = 0.594, SPI = -0.07 WHERE Lat_Round = 28.75 AND Long_Round = -27.25
+
+--3
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 34.25 AND Longitude = 132.75
+SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 34.25 AND Long_Round = 132.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 259.858, TAIR_SD = 0.471, SPI = 0.05 WHERE Lat_Round = 34.25 AND Long_Round = 132.25
+
+--4
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 42.25 AND Longitude = 142.75
+SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 42.25 AND Long_Round = 142.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 177.275, TAIR_SD = 0.515, SPI = 0.016 WHERE Lat_Round = 42.25 AND Long_Round = 142.25
+
+--5
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 45.25 AND Longitude = 11.75
+SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 45.25 AND Long_Round = 12.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 142.805, TAIR_SD = 0.853, SPI = 0.075 WHERE Lat_Round = 45.25 AND Long_Round = 12.25
 /**********************************************************************************************
 Summarized climate data
 ***********************************************************************************************/
 
 SELECT [Latitude] ,[Longitude], [MAT], [MAP]
 FROM [DelClimateDB].[dbo].[Global2010PT]
+
+

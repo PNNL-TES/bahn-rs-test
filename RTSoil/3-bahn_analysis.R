@@ -11,8 +11,8 @@ getwd()
 source( "0-header.R" )
 
 SCRIPT			<- "3-bahn_analysis.R"
-INFN 			<- "srdb-data-processed.csv"
-OUTFN 			<- "srdb-data-final.csv"
+INFN 			<- "MGRsD-data-processed.csv"
+OUTFN 			<- "MGRsD-data-final.csv"
 
 TDIFF_MAX 		<- 2	# max diff allowed btwn global dataset TAIR and observed
 
@@ -64,6 +64,8 @@ filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
     # 6292,		# TEMPORARY - remove at office
     # 2349		# Lavigne, Canada, looks OK not sure why so off
     # 2182 # checked, TS TA issue
+    4614, # checked, only one extreme high value
+    5227 # checked, model in the paper is not right
   ) ) )
   if( !quiet ) printlog( "Filtered problem studies:", nrow( srdb ) )
   
@@ -206,6 +208,7 @@ global_tair_dataset_effect <- function( srdb_orig ) {
 # -----------------------------------------------------------------------------
 # What's the effect of annual coverage? We'd expect a better relationship
 # when more of the year is measured
+# This test is meaningless because the studies include here all > 1yr data
 AC_test <- function( sdata ) {
 	printlog( SEPARATOR )
 	printlog( "How does annual coverage affect this relationship?" )
@@ -299,11 +302,11 @@ plotdata <- function( sdata, name ) {
 # What's the effect of drought? need new drought data
 # Need another drought index and re-analysis
 # -----------------------------------------------------------------------------
-
+# cut( srdb$SPI, breaks = seq(-3,5,2) )
 SPI_test <- function( sdata ) {
   printlog( SEPARATOR )
   printlog( "How does drought affect this relationship? (discrete)" )
-  sdata$SPI2 <- cut( sdata$SPI, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
+  sdata$SPI2 <- cut( sdata$SPI, breaks = seq(-3,5,2) ) #c( 0, 0.33, 0.67, 1 ), right=F )
   m1 <- lm( Rs_annual_bahn~Rs_annual * SPI2, data=sdata )
   print( summary( m1 ) )
   printlog( "How does drought affect this relationship? (continuous)" )
@@ -408,6 +411,8 @@ figB <- Rs_comparion_figure( srdb )
 figB_05 <- Rs_comparion_figure( srdb_05 )
 
 # How do autotrophic- versus heterotrophic-dominated systems differ?
+# Figure C. Difference between RA-dominated sites (RC_annual>0.5 is TRUE) 
+# and RH-dominated ones (RC_annual>0.5 is FALSE).
 figC <- RC_test( srdb )
 
 # What's the effect of annual coverage?
