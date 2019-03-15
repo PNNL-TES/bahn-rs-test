@@ -35,7 +35,6 @@ conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFacto
 # s <- srdb
 
 # Update compute_rs_mat function allow temperature as input
-# Temp: "Study_TS_Annual", "Study_temp", "TAnnual_Del", "MAP_Del"
 compute_rs_mat <- function( s, Temp ) {
 	# Compute model responses at MAT, taking into account different output units
 	printlog( "Reading unit conversions..." )
@@ -55,8 +54,21 @@ compute_rs_mat <- function( s, Temp ) {
 		c <- s[ i, "Model_paramC" ]
 		d <- s[ i, "Model_paramD" ]
 		
-		T <- s[ i, Temp ]
-		
+		if( !is.na( s[ i, "Study_TS_Annual" ] ) ) {
+		  printlog( "Study_TS_Annual is available" )
+			T <- s[ i, "Study_TS_Annual" ]
+		} 
+		else if ( !is.na( s[ i, "Study_temp" ] ) ) {
+		  T <- s[ i, "Study_temp" ]
+		}
+		else if ( !is.na( s[ i, "TAnnual_Del" ] ) ) {
+		  T <- s[ i, "TAnnual_Del" ]
+		}
+		# updated for study number 2560, use MAT if both study_temp and TAnnual_Del Null
+		else {
+		  printlog( "Soil_temp, Study_temp and TAnnual_Del are not available, MAT is used" )
+			T <- s[ i, "MAT" ]
+		}
 		u <- s[ i, "Model_output_units" ]
 		mtr = c( s[ i, "Model_temp_min" ], s[ i, "Model_temp_max" ] )
 	
@@ -254,7 +266,7 @@ theme_set( theme_bw() )
 printlog( "Reading", INFN )
 srdb <- read.csv( fn, stringsAsFactors=F )
 printdims( srdb )
-
+subset (srdb, is.na(srdb$Rs_annual_bahn), c(1,2,3,4))
 
 # In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
 # printlog( "Splitting model temperate range strings..." )
@@ -262,20 +274,7 @@ printdims( srdb )
 # srdb$mtr_low <- as.numeric( x[ , 1 ] )
 # srdb$mtr_high <- as.numeric( x[ , 2 ] )
 
-# Temp: "Study_TS_Annual", "Study_temp", "TAnnual_Del", "MAP_Del"
-
-# srdb <- compute_rs_mat( srdb, "Study_temp") # only 7 records
-# length( subset (srdb, !is.na(srdb$Rs_annual_bahn), c(1)) )
-# srdb <- srdb[, c(1:126)]
-
-srdb <- compute_rs_mat( srdb, "TAnnual_Del")
-colnames(srdb)[123:126] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
-
-srdb <- compute_rs_mat( srdb, "MAT_Del")
-colnames(srdb)[127:130] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
-
-srdb <- compute_rs_mat( srdb, "Study_TS_Annual")
-
+srdb <- compute_rs_mat( srdb )
 
 printlog( "Diagnostic plot..." )
 srdb$Rs_annual_bahn_err <- with( srdb, round( abs( ( Rs_annual_bahn-Rs_annual ) / Rs_annual ), 2 ) )

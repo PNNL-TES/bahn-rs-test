@@ -14,9 +14,8 @@ rm (list = ls())
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 getwd()
 
-loadlibs( c( "ggplot2", "reshape" ) )
-
 source( "0-header.R" )
+loadlibs( c( "ggplot2", "reshape" ) )
 
 SRDB_DIR    <- "E:/PNNL/bahn-rs-test/srdb_v4"
 SCRIPT			<- "1-bahn_climate_udel.R"
