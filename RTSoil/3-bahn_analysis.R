@@ -394,14 +394,18 @@ figA <- climate_figure( srdb_orig )
 
 # How accurately can the Bahn (2010) relationship predict observed annual Rs?
 mods <- Rs_annual_bahn_test( srdb )	
+summary(mods)
 m <- mods[[ 1 ]]
 m1 <- mods[[ 2 ]]
+intercept_test <- summary( m )$coefficients[ 1, 4 ]
+slope_test <- summary( m1 )$coefficients[ 2, 4 ]
 
 # How accurately can the Bahn (2010) relationship predict observed annual Rs?
 mods_05 <- Rs_annual_bahn_test( srdb_05 )	
 m_05 <- mods_05[[ 1 ]]
 m1_05 <- mods_05[[ 2 ]]
-
+intercept_test <- summary( m_05 )$coefficients[ 1, 4 ]
+slope_test <- summary( m1_05 )$coefficients[ 2, 4 ]
 # Make a nice figure of this
 figB <- Rs_comparion_figure( srdb )
 
@@ -416,7 +420,8 @@ figB_05 <- Rs_comparion_figure( srdb_05 )
 figC <- RC_test( srdb )
 
 # What's the effect of annual coverage?
-AC_test( srdb )
+# All site in this dataset should have at least 1 year of coverage
+# AC_test( srdb )
 
 # Report updated values for Bahn (2010) relationship based on SRDB
 compute_Rs_annual_bahn( srdb )
@@ -453,7 +458,9 @@ print( p2 )
 saveplot( "3-oddballs2" )
 
 
-# TODO: re-compute Bahn relationship CORRECTLY!!!!!
+# TODO: re-compute Bahn relationship CORRECTLY!!!!! 
+# If soil temperature data are available, the results is pretty good, how about TAnnual, MAT?
+# IF not good, re-compute Bahn relationship for air temperature?
 
 printlog( SEPARATOR )
 printlog( "All done with", SCRIPT )

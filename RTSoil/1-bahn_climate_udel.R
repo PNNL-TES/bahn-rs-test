@@ -18,7 +18,7 @@ source( "0-header.R" )
 loadlibs( c( "ggplot2", "reshape" ) )
 
 
-SRDB_DIR    <- "E:/PNNL/bahn-rs-test/MGRsD"
+SRDB_DIR    <- "~/PNNL/bahn-rs-test/MGRsD"
 SCRIPT			<- "1-bahn_climate_udel.R"
 INFN		  	<- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-climate.csv"

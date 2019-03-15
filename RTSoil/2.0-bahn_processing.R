@@ -15,7 +15,7 @@ loadlibs( c( "ggplot2", "stringr" ) )
 SCRIPT			<- "2-bahn_processing.R"
 INFN 			  <- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-processed.csv"
-SRDB_DIR    <- "E:/PNNL/bahn-rs-test/MGRsD"
+SRDB_DIR    <- "~/PNNL/bahn-rs-test/MGRsD"
 fn <- paste( SRDB_DIR, INFN, sep="/" )
 
 CONVERSIONS		<- "srdb-conversions.csv"
