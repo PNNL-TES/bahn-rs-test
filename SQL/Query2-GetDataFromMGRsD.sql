@@ -328,20 +328,27 @@ UPDATE [SRDBV4] SET Study_TS_Annual = 5.388 WHERE Study_number = 6451 AND Latitu
 UPDATE [SRDBV4] SET Study_TS_Annual = 7.861 WHERE Study_number = 6451 AND Latitude = 47.16666667
 
 
-
-
 /**********************************************************************************************
-To do
+Step 5: Annual coverage check
+1078, 1292,1647,1871,1987,2372,2534,5278,5522,5701,6372,6381,6451 Annual_coverage should be 1
 ***********************************************************************************************/
---1 Get MGRSD with NULL ST study
-SELECT DISTINCT Study_number FROM [dbo].[SRDBMGRsD] WHERE [TSoil] = -9999
+SELECT DISTINCT Study_number, Annual_coverage FROM [dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+	AND Study_TS_Annual IS NOT NULL
+	AND Annual_coverage != 1
 ORDER BY Study_number
 
---2. Study has 10, 11 month TS?
-SELECT DISTINCT Study_number FROM [dbo].[SRDBMGRsD] WHERE [TSoil] = -9999 AND [Month_Frequency] = 11 ORDER BY Study_number
--- 2182,2844,4756,5385
-SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual, Study_TS_Annual
-	, Model_output_units, Record_number, Latitude, Longitude From SRDBV4 WHERE Study_number = 5385
+SELECT Study_number, Annual_coverage FROM [dbo].[SRDBV4] WHERE Study_number = 1078 OR Study_number = 1292 OR Study_number = 1647
+	OR Study_number = 1871 OR Study_number = 1987 OR Study_number = 2372 OR Study_number = 2534 OR Study_number = 5278
+	OR Study_number = 5522 OR Study_number = 5701 OR Study_number = 6372 OR Study_number = 6381 OR Study_number = 6451
 
 
 --3 Add studies for Rs_annual > 3000 (6140, 8542, 8569)
@@ -390,7 +397,7 @@ UPDATE [SRDBV4] SET Model_paramA = -0.1226, Model_paramB = 0.054, Model_paramC =
 
 
 /**********************************************************************************************
-Output data WITH TS information
+Output data WITH TS information  -- 869 records
 ***********************************************************************************************/
 SELECT * FROM [dbo].[SRDBV4]
 WHERE Latitude IS NOT NULL 
@@ -405,4 +412,31 @@ WHERE Latitude IS NOT NULL
 	AND Study_TS_Annual IS NOT NULL
 ORDER BY Study_number
 
+--SELECT Model_type FROM SRDBV4
 
+SELECT Distinct Model_type FROM [dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+	AND Study_TS_Annual IS NOT NULL
+
+
+/*
+SELECT * FROM [SRDBStagging].[dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+ORDER BY Study_number
+*/

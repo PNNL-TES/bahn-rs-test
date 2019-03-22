@@ -205,6 +205,7 @@ global_tair_dataset_effect <- function( srdb_orig ) {
 	saveplot( "3-Diagnostic_tair_inaccuracies" )
 }
 
+colnames(srdb)
 # -----------------------------------------------------------------------------
 # What's the effect of annual coverage? We'd expect a better relationship
 # when more of the year is measured
@@ -212,18 +213,18 @@ global_tair_dataset_effect <- function( srdb_orig ) {
 AC_test <- function( sdata ) {
 	printlog( SEPARATOR )
 	printlog( "How does annual coverage affect this relationship?" )
-	sdata$AC2 <- cut( sdata$Annual_coverage, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
+	sdata$AC2 <- cut( sdata$Annual_TS_Coverage, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
 	m <- lm( Rs_annual_bahn~Rs_annual * AC2, data=sdata )
 	print( summary( m ) )
 	printlog( SEPARATOR )
 	printlog( "Model for AC<0.33 only:" )
-	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_coverage<0.33 ) ) ) )
+	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_TS_Coverage<0.33 ) ) ) )
 	printlog( SEPARATOR )
 	printlog( "Model for AC 0.33-0.67 only:" )
-	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_coverage>=0.33 & Annual_coverage < 0.67 ) ) ) )
+	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_TS_Coverage>=0.33 & Annual_TS_Coverage < 0.67 ) ) ) )
 	printlog( SEPARATOR )
 	printlog( "Model for AC>=0.67 only:" )
-	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_coverage>0.67 ) ) ) )
+	print( summary( lm( Rs_annual_bahn ~ Rs_annual, data=subset( sdata, Annual_TS_Coverage>0.67 ) ) ) )
 
 	p <- qplot( Rs_annual, Rs_annual_bahn, data=subset( sdata, !is.na( AC2 ) ), color=AC2 )
 	p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
@@ -416,6 +417,7 @@ figB_05 <- Rs_comparion_figure( srdb_05 )
 figC <- RC_test( srdb )
 
 # What's the effect of annual coverage?
+# Changed to TS coverage
 AC_test( srdb )
 
 # Report updated values for Bahn (2010) relationship based on SRDB

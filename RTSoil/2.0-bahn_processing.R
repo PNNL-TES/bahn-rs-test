@@ -15,7 +15,7 @@ loadlibs( c( "ggplot2", "stringr" ) )
 SCRIPT			<- "2-bahn_processing.R"
 INFN 			  <- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-processed.csv"
-SRDB_DIR    <- "E:/PNNL/bahn-rs-test/MGRsD"
+SRDB_DIR    <- "~/PNNL/bahn-rs-test/MGRsD"
 fn <- paste( SRDB_DIR, INFN, sep="/" )
 
 CONVERSIONS		<- "srdb-conversions.csv"
@@ -137,7 +137,7 @@ compute_rs_mat <- function( s, Temp ) {
 		  rs <- exp( a + b * T )
 		}
 		# Added model 7 - "Exponential, R=a+b exp(T/c)"
-		else if( mt == "Exponential, R=a+b exp(T/c)" ) {
+		  else if( mt == "Exponential, R=a+b exp(T/c)" ) {
 		  rs <- a + b * exp( T/c )
 		}
 		  else if( mt == "Exponential, R=a exp(b(T-c)/10)" ) {
@@ -269,10 +269,10 @@ printdims( srdb )
 # srdb <- srdb[, c(1:126)]
 
 srdb <- compute_rs_mat( srdb, "TAnnual_Del")
-colnames(srdb)[123:126] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
+colnames(srdb)[126:129] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
 
 srdb <- compute_rs_mat( srdb, "MAT_Del")
-colnames(srdb)[127:130] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
+colnames(srdb)[130:133] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
 
 srdb <- compute_rs_mat( srdb, "Study_TS_Annual")
 
@@ -304,8 +304,9 @@ write.csv( srdb, OUTFN, row.names=F )
 printlog( "All done with", SCRIPT )
 sink()
 
+colnames(srdb)
 
-
+# **********************************************************************************
 
 
 

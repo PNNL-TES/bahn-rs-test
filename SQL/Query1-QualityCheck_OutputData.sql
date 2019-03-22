@@ -28,8 +28,9 @@ UPDATE [SRDBV4] SET Model_paramA =-0.1303, Model_paramB =0.0386 , Site_name = 'M
 
 -- 4013 Exponential, R=a exp(b(T-c)), change to "Linear, R=a+b(T-c)" 
 -- # units change to mol C/m2/yr
+-- If use exponential model, the estimated Rs is 131 mol C / yr, which is much higher than reported (39), linear model is more close (45)
 SELECT SRDBV4.Model_type, Model_output_units, Model_paramA, Model_paramB, Model_paramC, Model_paramD From SRDBV4 WHERE Study_number = 4013
-UPDATE [SRDBV4] SET Model_type = 'Exponential, R=a exp(b(T-c))' WHERE [study_number] = 4013
+UPDATE [SRDBV4] SET Model_type = 'Linear, R=a+b(T-c)' WHERE [study_number] = 4013
 UPDATE [SRDBV4] SET Model_output_units = 'mol C/m2/yr' WHERE [study_number] = 4013
 
 -- 8602 Exponential, R=a exp(b(T-c)), change to Linear, R=a+b(T-c)
@@ -133,6 +134,13 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 UPDATE [SRDBV4] SET Model_type = 'Exponential, R=a+b exp(T/c)', Model_paramA = 2.414, Model_paramB = 7.483e-12, Model_paramC =1.176, Model_paramD = NULL 
 	WHERE [study_number] = 1324 AND Record_number = 3247
 SELECT 7.483e-12
+
+-- Study 1324
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual, Study_TS_Annual
+	, Model_output_units, Record_number, Latitude, Longitude, Study_TS_Annual, TAnnual_Del, Model_type
+	From SRDBV4 WHERE Study_number = 1324
+
+UPDATE [SRDBV4] SET Study_TS_Annual = 27.805  WHERE Study_number = 1324
 
 
 -- Study number 2182
@@ -334,35 +342,11 @@ INNER JOIN [DelClimateDB].[dbo].[Global_P] AS P
 ON P.Latitude = S.Lat_Round AND P.Longitude = S.Long_Round AND P.[Year] = S.[Year]
 
 
-SELECT * FROM [SRDBStagging].[dbo].[SRDBV4]
-WHERE Latitude IS NOT NULL 
-	AND Longitude IS NOT NULL 
-	AND Study_midyear IS NOT NULL
-	AND YearsOfData IS NOT NULL
-	AND Rs_annual IS NOT NULL AND Rs_annual > 0
-	AND Model_output_units IS NOT NULL
-	AND Model_paramA IS NOT NULL
-	AND Model_paramB IS NOT NULL
-	AND Manipulation = 'None'
-ORDER BY Study_number
+
 
 /**********************************************************************************************
 SPI IS NULL Issue
 ***********************************************************************************************/
-
-SELECT Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4]
-WHERE Latitude IS NOT NULL 
-	AND Longitude IS NOT NULL 
-	AND Study_midyear IS NOT NULL
-	AND YearsOfData IS NOT NULL
-	AND Rs_annual IS NOT NULL AND Rs_annual > 0
-	AND Model_output_units IS NOT NULL
-	AND Model_paramA IS NOT NULL
-	AND Model_paramB IS NOT NULL
-	AND Manipulation = 'None'
-	AND Study_TS_Annual IS NOT NULL
-	AND [dbo].[SRDBV4].SPI IS NULL
-ORDER BY Lat_Round, Long_Round
 
 -- 1
 SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
@@ -381,11 +365,12 @@ SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].
 	WHERE [Latitude] = 34.25 AND Longitude = 132.75
 SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 34.25 AND Long_Round = 132.25
 UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 259.858, TAIR_SD = 0.471, SPI = 0.05 WHERE Lat_Round = 34.25 AND Long_Round = 132.25
-
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 259.858, TAIR_SD = 0.471, SPI = 0.05 WHERE Lat_Round = 34.25 AND Long_Round = 133.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 259.858, TAIR_SD = 0.471, SPI = 0.05 WHERE Lat_Round = 35.75 AND Long_Round = 133.250
 --4
 SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
 	WHERE [Latitude] = 42.25 AND Longitude = 142.75
-SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 42.25 AND Long_Round = 142.25
+SELECT Study_number,Year, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 42.25 AND Long_Round = 142.25
 UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 177.275, TAIR_SD = 0.515, SPI = 0.016 WHERE Lat_Round = 42.25 AND Long_Round = 142.25
 
 --5
@@ -393,6 +378,54 @@ SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].
 	WHERE [Latitude] = 45.25 AND Longitude = 11.75
 SELECT Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 45.25 AND Long_Round = 12.25
 UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 142.805, TAIR_SD = 0.853, SPI = 0.075 WHERE Lat_Round = 45.25 AND Long_Round = 12.25
+
+--6
+SELECT Study_number, Lat_Round, Long_Round FROM [dbo].[SRDBV4] WHERE Study_TS_Annual IS NOT NULL AND Lat_Round = 5.25
+	AND [dbo].[SRDBV4].SPI IS NULL
+
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 5.75 AND Longitude = 125.25 AND Year = 2002
+SELECT Study_number,Year, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 5.25 AND Long_Round = 162.75
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 367.538, TAIR_SD = 0.499, SPI = -0.098 WHERE Lat_Round = 5.25 AND Long_Round = 162.75
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 367.538, TAIR_SD = 0.499, SPI = -0.098 WHERE Lat_Round = 5.25 AND Long_Round = 163.25
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 367.538, TAIR_SD = 0.499, SPI = -0.098 WHERE Lat_Round = 6.75 AND Long_Round = 158.25
+
+--7
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 22.75 AND Longitude = -105.75 AND Year = 2002
+SELECT Study_number,Year, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 22.25 AND Long_Round = -159.750
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 148.320, TAIR_SD = 0.452, SPI =0.063 WHERE Lat_Round = 22.25 AND Long_Round = -159.750
+
+--8
+SELECT [Latitude], Longitude, PRECIP_SD, TAIR_SD, SPI FROM [DelClimateDB].[dbo].[Global_P]
+	WHERE [Latitude] = 45.75 AND Longitude = -61.25 AND Year = 2004
+SELECT Year, Study_number, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round = 45.750 AND Long_Round = -61.750
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 176.154, TAIR_SD = 0.911, SPI =-2.675 WHERE Lat_Round = 45.750 AND Long_Round = -61.750 AND Year = 2001
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 176.154, TAIR_SD = 0.911, SPI =0.451 WHERE Lat_Round = 45.750 AND Long_Round = -61.750 AND Year = 2002
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 176.154, TAIR_SD = 0.911, SPI =0.238 WHERE Lat_Round = 45.750 AND Long_Round = -61.750 AND Year = 2003
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 176.154, TAIR_SD = 0.911, SPI =-1.331 WHERE Lat_Round = 45.750 AND Long_Round = -61.750 AND Year = 2004
+
+
+/*
+SELECT Study_number,Year, Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI FROM [dbo].[SRDBV4] WHERE Lat_Round =  AND Long_Round = 
+UPDATE [dbo].[SRDBV4] SET PRECIP_SD = 142.805, TAIR_SD = 0.853, SPI = 0.075 WHERE Lat_Round =  AND Long_Round = 
+*/
+
+
+SELECT Lat_Round, Long_Round, PRECIP_SD, TAIR_SD, SPI, [Year] FROM [dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+	AND Study_TS_Annual IS NOT NULL
+	AND [dbo].[SRDBV4].SPI IS NULL
+ORDER BY Lat_Round, Long_Round
+
 /**********************************************************************************************
 Summarized climate data
 ***********************************************************************************************/
@@ -400,4 +433,15 @@ Summarized climate data
 SELECT [Latitude] ,[Longitude], [MAT], [MAP]
 FROM [DelClimateDB].[dbo].[Global2010PT]
 
-
+-- 901 records
+SELECT * FROM [SRDBStagging].[dbo].[SRDBV4]
+WHERE Latitude IS NOT NULL 
+	AND Longitude IS NOT NULL 
+	AND Study_midyear IS NOT NULL
+	AND YearsOfData IS NOT NULL
+	AND Rs_annual IS NOT NULL AND Rs_annual > 0
+	AND Model_output_units IS NOT NULL
+	AND Model_paramA IS NOT NULL
+	AND Model_paramB IS NOT NULL
+	AND Manipulation = 'None'
+ORDER BY Study_number

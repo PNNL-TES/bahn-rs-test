@@ -24,7 +24,7 @@ printlog( "Welcome to", SCRIPT )
 theme_set( theme_bw() )
 
 printlog( "Reading", OUTFN )
-srdb <- read.csv( fn, stringsAsFactors=F )
+srdb <- read.csv( OUTFN, stringsAsFactors=F )
 printdims( srdb )
 
 # In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
@@ -748,7 +748,71 @@ subtest$Rs_TAIR_units
 455.8 * (subtest$rs * conv) ^ 1.0054 	# Bahn et al. function
 subtest$Rs_annual_bahn
 subtest$Rs_annual
+AT <- c(17.09000,16.50000,15.56,13.6,10.39,7.88,5.3,4.12,0.35,3.32,6.73,10.7)
+rs <- c(1.190,1.700,1.460,1.530,1.370,.850,0.630,0.390,0.220,0.380,0.660,1.350)
+m <-nls(rs ~ a * exp (b * ((1/56.02) - 1/(AT+273.15-227.13))), start=list(a=0.7,b=326) )
+summary(m)
+qplot (AT, rs)
 
+# 6497
+# Model_paramC change to 0
+subtest <- subtest_1 (6497)
+subtest
+subtest$rs <- subtest$a * exp( subtest$b * (subtest$T - 0) )
+subtest$rs
+u <- subtest[ 1, "Model_output_units" ]
+conv <- conversions[ conversions$Unit==u, "Conversion" ]
+subtest$Rs_TAIR_units
+455.8 * (subtest$rs * conv) ^ 1.0054 	# Bahn et al. function
+subtest$Rs_annual_bahn
+subtest$Rs_annual
+AT <- seq(10:35)
+AT <- c(11.45000,11.51000,12.28000,14.59000,18.22000,20.86,23.17,25.71,24.88,21.25,17.45,14.53)
+rs <- subtest$a * exp( subtest$b * (AT - 0) )
+rs <- c(7.010,6.440,7.360,8.020,9.960,11.340,13.320,15.600,14.470,12.980,10.030,8.500)
+
+qplot(AT, rs, xlim = c(0,40), ylim = c(0,100) )
+
+# 7596
+# Model_paramC change to 0
+subtest <- subtest_1 (7596)
+subtest
+subtest$rs <- subtest$a * exp( subtest$b * (subtest$T - 0) )
+subtest$rs
+u <- subtest[ 1, "Model_output_units" ]
+conv <- conversions[ conversions$Unit==u, "Conversion" ]
+subtest$Rs_TAIR_units
+455.8 * (subtest$rs * conv) ^ 1.0054 	# Bahn et al. function
+subtest$Rs_annual_bahn
+subtest$Rs_annual
+
+# 77046
+# Model_paramC change to 0
+subtest <- subtest_1 (7704)
+subtest
+subtest$rs <- subtest$a * exp( subtest$b * (subtest$T - 0) )
+subtest$rs
+u <- subtest[ 1, "Model_output_units" ]
+conv <- conversions[ conversions$Unit==u, "Conversion" ]
+subtest$Rs_TAIR_units
+455.8 * (subtest$rs * conv) ^ 1.0054 	# Bahn et al. function
+subtest$Rs_annual_bahn
+subtest$Rs_annual
+
+AT <- seq(5:26)
+rs <- subtest$a[2] * exp( subtest$b[2]*(AT - 0) )
+# rs <- subtest$a[2] * subtest$b[2]^( (AT - 10)/10 )
+qplot(AT, rs, xlim = c(0,30), ylim = c(-1,3) )
+
+# 9501
+subtest <- subtest_1 (9501)
+subtest
+AT <- seq(5:26)
+rs <- subtest$a[1] * exp( subtest$b[1]*(AT - 0) )
+qplot(AT, rs, xlim = c(0,30), ylim = c(0,5) )
+
+rs <- subtest$a[2] * exp( subtest$b[2]*(AT - 0) )
+qplot(AT, rs, xlim = c(0,20), ylim = c(0,5) )
 
 # *****************************************************************************************
 # Study in filtration3, may due to TS TA issue

@@ -270,3 +270,34 @@ ST <- seq(5, 30, 1)
 rs1 <- 0.416 + 0.0024 * ( ST ) + -0.0018 * ( ST ) ^ 2
 rs1 <- -0.1226 + 0.054 * ( ST ) + -0.0014 * ( ST ) ^ 2
 qplot(ST, rs1, xlim = c(0,35), ylim = c(0,1))
+
+# *****************************************************************************************
+# check results
+# 8382, 8334
+# *****************************************************************************************
+srdb[srdb$Rs_annual_bahn > 9000,]$Study_number
+subtest <- subtest_1 (8382)
+subtest
+subtest$rs <- subtest$a * exp( subtest$b * (( 1 / subtest$c) - ( 1 / ( subtest$T + 273.15 -subtest$d ))))
+subtest$rs <- 2
+u <- subtest[ 1, "Model_output_units" ]
+conv <- conversions[ conversions$Unit==u, "Conversion" ]
+subtest$Rs_TAIR_units
+455.8 * (subtest$rs * conv) ^ 1.0054	# Bahn et al. function
+subtest$Rs_annual_bahn # need check out why not exictly the same
+subtest$Rs_annual
+
+# 8384
+subtest <- subtest_1 (8334)
+subtest
+
+# Model Type not including in the calculating function
+unique(srdb[is.na(srdb$Rs_annual_bahn),]$Model_type)
+unique(srdb$Model_type)
+
+# caused by estimates < 0
+subset <- subtest_2("Polynomial, R=a+b(T-d)+c(T-d)^2")
+subset[is.na(subset$Rs_annual_bahn),]
+
+subset <- subtest_1(5591)
+
