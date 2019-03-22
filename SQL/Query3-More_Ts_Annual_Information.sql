@@ -57,9 +57,9 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 -- 2182
 -- Parameter issue, calculated Ts is 11, too much higher than T_nnual
 --UPDATE SRDBV4 SET Study_TS_Annual = , TS_Source = 'Rs_Ts_Relationship', Annual_TS_Coverage = 1 WHERE Study_number = 2182 
---SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
---	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
---	From SRDBV4 WHERE Study_number = 2182
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
+	From SRDBV4 WHERE Study_number = 2182
 
 -- 2326
 UPDATE SRDBV4 SET Study_TS_Annual = 14, TS_Source = 'Rs_Ts_Relationship', Annual_TS_Coverage = 1 WHERE Study_number = 2326 AND Lat_Round = 37.750
@@ -89,9 +89,9 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 -- 4756 
 -- Potential issue
 --UPDATE SRDBV4 SET Study_TS_Annual = , TS_Source = 'Description in Page 9 and Rs_Ts_Relationship', Annual_TS_Coverage = 1 WHERE Study_number = 4756
---SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
---	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
---	From SRDBV4 WHERE Study_number = 4756
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
+	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
+	From SRDBV4 WHERE Study_number = 4756
 
 /*
 
@@ -456,7 +456,7 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 	From SRDBV4 WHERE Study_number = 4392
 
 -- 4472
-UPDATE SRDBV4 SET Study_TS_Annual = 12, TS_Source = 'Figure 3', Annual_TS_Coverage = 0.75, TS_Flag = 'TAIR_0' WHERE Study_number = 4472
+UPDATE SRDBV4 SET Study_TS_Annual = 12, TS_Source = 'Figure 3', Annual_TS_Coverage = 0.75, TS_Flag = 'TAIR_3' WHERE Study_number = 4472
 SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
 	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
 	From SRDBV4 WHERE Study_number = 4472
@@ -793,6 +793,7 @@ SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_pa
 SELECT * FROM [DelClimateDB].[dbo].[Global_T] WHERE Latitude = 42.250 AND Longitude = 128.250 AND [year] = 2005
 
 -- 7727
+-- Data are from warm period
 UPDATE SRDBV4 SET Study_TS_Annual = 21, TS_Source = 'Figure 2', Annual_TS_Coverage = 1 WHERE Study_number = 7727
 SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual,MAT, MAP
 	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source

@@ -1,0 +1,24 @@
+---
+title: "Bahn analysis report"
+author: "Jinshi"
+date: "March 264, 2019"
+output:
+  html_document:
+    df_print: paged
+---
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+
+
+```{r, echo=FALSE} 
+
+```
+
+```{r}
+
+```
+# The spatial destribution of global Rs sites showed that we have much more measured data from the middle latitude region
+* It is difficult to measure soil respiration all year around in the cold region
+* Developed contries most located at Middle latitude region, thus recieved more funds to support the Rs measurements 
+
+![Global spatial destribution of soil repiration sites](SRDB_V4_Fig1.png)
