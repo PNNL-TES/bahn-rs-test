@@ -17,8 +17,9 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```{r}
 
 ```
-# The spatial destribution of global Rs sites showed that we have much more measured data from the middle latitude region
+# 1 The spatial destribution of global Rs sites showed that we have much more measured data from the middle latitude region
 * It is difficult to measure soil respiration all year around in the cold region
 * Developed contries most located at Middle latitude region, thus recieved more funds to support the Rs measurements 
 
 ![Global spatial destribution of soil repiration sites](SRDB_V4_Fig1.png)
+
