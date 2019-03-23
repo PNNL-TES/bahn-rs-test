@@ -16,13 +16,11 @@ OUTFN 			<- "MGRsD-data-final.csv"
 
 TDIFF_MAX 		<- 2	# max diff allowed btwn global dataset TAIR and observed
 
-
-
 # -----------------------------------------------------------------------------
-# Filter out data: need more work, not figure out what this try to do
-# Some part have finished in 2-bahn_processing.R
+# Step I -- Create functions
 # -----------------------------------------------------------------------------
 
+# Function 1: filter out data, most quality control have down in 2-bahn_processing.R
 # srdb_02 <- subset( srdb, !mtr_out )
 # colnames (srdb)
 
@@ -56,19 +54,10 @@ filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
   
   # (Temporary?) excludes; values weird but can't find anything wrong
   srdb <- subset( srdb, !( Study_number %in% c( 
-    # 5278, 		# Zu et al., Maoershan: reported annual fluxes very high
-    # # checked, seems like nothing wrong
-    # 3886,		# Jia et al., Maoershan: reported annual fluxes very high
-    # # checked, seems like nothing wrong, TS TA issue
-    # # 6479,		# TEMPORARY - remove at office, model type updated
-    # 6292,		# TEMPORARY - remove at office
-    # 2349		# Lavigne, Canada, looks OK not sure why so off
-    # 2182 # checked, TS TA issue
-    4614, # checked, only one extreme high value
-    5227 # checked, model in the paper is not right
+    4614, # checked, extreme high value
+    5227 # checked, model in the paper may not right
   ) ) )
   if( !quiet ) printlog( "Filtered problem studies:", nrow( srdb ) )
-  
   
   if( !quiet ) {
     printlog( "If the climate data diverges from on-the-ground climate," )
@@ -86,7 +75,7 @@ filtration3 <- function( srdb, tdiff_max=TDIFF_MAX, quiet=F ) {
 
 
 # -----------------------------------------------------------------------------
-# Re-compute the relationship between Rs_annual and RS@MAT
+# Function 2: Re-compute the relationship between Rs_annual and RS@MAT
 compute_Rs_annual_bahn <- function( sdata, name="" ) {
 	printlog( SEPARATOR )
 	printlog( "Bahn relationship for these data:" )
@@ -95,7 +84,7 @@ compute_Rs_annual_bahn <- function( sdata, name="" ) {
 }
 
 # -----------------------------------------------------------------------------
-# See how Rs_annual is related to Rs_annual_bahn
+# Function 3: See how Rs_annual is related to Rs_annual_bahn
 Rs_annual_bahn_test <- function( sdata, name="", quiet=F ) {
 	printlog( SEPARATOR )
 	if( name != "" ) {
@@ -148,9 +137,8 @@ Rs_annual_bahn_test <- function( sdata, name="", quiet=F ) {
 }
 
 # -----------------------------------------------------------------------------
-# How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
+# Function 4: How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
 # is due to inaccuracies in the air temperature dataset?
-# -----------------------------------------------------------------------------
 
 climate_variability_test <- function( sdata ) {
 	printlog( SEPARATOR )
@@ -175,8 +163,9 @@ climate_variability_test <- function( sdata ) {
 }
 
 # -----------------------------------------------------------------------------
-# How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
+# Function 5: How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
 # is due to inaccuracies in the air temperature dataset?
+
 global_tair_dataset_effect <- function( srdb_orig ) {
 	printlog( SEPARATOR, SEPARATOR )
 	printlog( "Testing how inaccuracies in global TAIR dataset affect results" )
@@ -205,11 +194,11 @@ global_tair_dataset_effect <- function( srdb_orig ) {
 	saveplot( "3-Diagnostic_tair_inaccuracies" )
 }
 
-colnames(srdb)
 # -----------------------------------------------------------------------------
-# What's the effect of annual coverage? We'd expect a better relationship
+# Function 6: What's the effect of annual coverage? We'd expect a better relationship
 # when more of the year is measured
 # This test is meaningless because the studies include here all > 1yr data
+
 AC_test <- function( sdata ) {
 	printlog( SEPARATOR )
 	printlog( "How does annual coverage affect this relationship?" )
@@ -234,8 +223,9 @@ AC_test <- function( sdata ) {
 
 
 # -----------------------------------------------------------------------------
-# How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
+# Function 7: How much of the inaccuracy in the Rs_annual_bahn~Rs_annual relationship
 # is due to inaccuracies in the air temperature dataset?
+
 RC_test <- function( sdata ) {
 	printlog( SEPARATOR )
 	printlog( "How does RC contribution affect this relationship?" )
@@ -256,7 +246,10 @@ RC_test <- function( sdata ) {
     invisible( p )
 }
 
+
 # -----------------------------------------------------------------------------
+# Function 8: flot data
+
 plotdata <- function( sdata, name ) {
 
 	printlog( "******************** water stress test" )
@@ -282,7 +275,6 @@ plotdata <- function( sdata, name ) {
 	print( p )
 	ggsave( paste( OUTDIR, name, "-MAP.pdf", sep="" ) )
 
-
 	printlog( "******************** residual and histogram plots" )
 	sdata$resid <- m$residuals
 	sdata$pred <- predict( m )
@@ -300,10 +292,10 @@ plotdata <- function( sdata, name ) {
 
 
 # -----------------------------------------------------------------------------
-# What's the effect of drought? need new drought data
+# Function 9: What's the effect of drought? need new drought data
 # Need another drought index and re-analysis
-# -----------------------------------------------------------------------------
 # cut( srdb$SPI, breaks = seq(-3,5,2) )
+
 SPI_test <- function( sdata ) {
   printlog( SEPARATOR )
   printlog( "How does drought affect this relationship? (discrete)" )
@@ -321,13 +313,10 @@ SPI_test <- function( sdata ) {
 }
 
 
-
-
-
 # -----------------------------------------------------------------------------
-# Main figure comparing Rs_annual with Rs_annual_bahn
+# Function 10: Main figure comparing Rs_annual with Rs_annual_bahn
 # Updateed
-# -----------------------------------------------------------------------------
+
 Rs_comparion_figure <- function( srdb, name="" ) {
 	printlog( SEPARATOR )
 	if( name != "" ) {
@@ -350,7 +339,7 @@ Rs_comparion_figure <- function( srdb, name="" ) {
 }
 
 # -----------------------------------------------------------------------------
-# Climate space figure
+# Function 11: Climate space figure
 # colnames(srdb)
 
 climate_figure <- function( srdb, name="" ) {
@@ -367,10 +356,24 @@ climate_figure <- function( srdb, name="" ) {
     invisible( p )
 }
 
+# -----------------------------------------------------------------------------
+# Function 12: whether different TS source have effect
 
-# ------------------------------------------
-# ----------     MAIN PROGRAM     ---------- 
-# ------------------------------------------
+unique(srdb$TS_Source)
+TS_Source_test <- function( sdata ) { 
+  sdata$TS_Source2 <- 
+    ifelse( sdata$TS_Source == 'Rs_Ts_Relationship', "Rs Ts Relationship", ifelse(sdata$TS_Source == 'MGRsD', "From MGRsD", "From Paper"))
+  
+  p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=TS_Source2 )
+  p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
+  print( p )
+  saveplot( "6-TS_Source_effect" )
+}
+
+
+# -------------------------------------------------------------------------------------
+# ----------     Step II: MAIN PROGRAM     ---------- 
+# -------------------------------------------------------------------------------------
 
 sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
 printlog( "Welcome to", SCRIPT )
@@ -384,6 +387,15 @@ printlog( "Reading", INFN, "..." )
 srdb_orig <- read.csv( INFN, stringsAsFactors=F )
 srdb <- srdb_orig
 srdb_05 <- filtration3( srdb_orig, 0.5, quiet=T )
+
+# relationship between reported Rs_Annual and calculated Rs_Annual based on the model from paper
+p <- qplot(Rs_TAIR*365/0.9645, Rs_annual, data=srdb, color = TS_Source2)
+p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) + 
+  xlab (expression ("Annual Rs predicted by model using TS (g C/ m"^2*"/yr)")) +
+  ylab (expression ("Reported annual Rs (g C/m"^2*"/yr)"))
+print( p )
+subset(srdb, srdb$TS_Source2 == 'Rs Ts Relationship')
+print( summary( lm( Rs_annual ~ Rs_TAIR + TS_Source2 + Rs_TAIR * TS_Source2, data=srdb ) ) )
 
 # Climate space figure
 figA <- climate_figure( srdb_orig )
@@ -423,8 +435,7 @@ figC <- RC_test( srdb )
 # What's the effect of annual coverage?
 
 # Changed to TS coverage
-# All site in this dataset should have at least 1 year of coverage
-# AC_test( srdb )
+AC_test( srdb )
 
 # Report updated values for Bahn (2010) relationship based on SRDB
 compute_Rs_annual_bahn( srdb )
@@ -433,6 +444,9 @@ compute_Rs_annual_bahn( srdb )
 
 # Do ecosystems with more-variable climates exhibit different trends?
 climate_variability_test( srdb )
+
+# Does TS source afffects result
+fig_Ts <- TS_Source_test(srdb)
 
 # Finished in 2-bahn_climate_udel.R
 # srdb <- filtration3( srdb_orig ) 
@@ -443,6 +457,8 @@ SPI_test( srdb ) # need a new SPI data
 printlog( SEPARATOR )
 ODD_ERR <- 30 # %
 printlog( "Computing oddballs, threshold of", ODD_ERR, "%" )
+
+
 
 srdb_05$Rs_err <- round( with( srdb_05, ( Rs_annual_bahn-Rs_annual ) / Rs_annual ) * 100, 0 )
 srdb_05$Rs_dev <- with( srdb_05, Rs_annual_bahn-Rs_annual )
@@ -468,7 +484,6 @@ saveplot( "3-oddballs2" )
 printlog( SEPARATOR )
 printlog( "All done with", SCRIPT )
 sink()
-
 
 
 
