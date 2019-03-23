@@ -2,6 +2,7 @@
 rm (list = ls())
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 getwd()
+source( "0-header.R" )
 
 # install.packages("gridExtra")
 library("gridExtra")
@@ -12,21 +13,23 @@ srdb <- read.csv( INFN, stringsAsFactors=F )
 
 # -----------------------------------------------------------------------------
 # Function plot and compare TS, TAnnnual, MAT calculated Rs_bahn with Rs_Annual
-TSTSMAT_test <- function( sdata, bahn, y_lab ) {
+TSTSMAT_test <- function( sdata, bahn, panel_lab ) {
   
   m1 <- lm( bahn ~ Rs_annual, data=sdata )
   print( summary( m1 ) )
   
   p <- qplot( Rs_annual, bahn, data=sdata, ylim = c(0,7000) ) + geom_point( alpha = 0.1 )
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) + xlab(expression('Rs_Annual (g C/m'^2 * '/yr)')) +
-    ylab(expression('Rs_bahn (g C/m'^2 * '/yr)' ) )
+    ylab(expression('Rs_bahn (g C/m'^2 * '/yr)' ) ) +
+    annotate(geom="text", x=200, y=6200, label = panel_lab, color="black", hjust = 0)
+  
   print (p)
   # saveplot( paste("5-TSTAMAT_comparison",bahn,"_" ))
 }
 
 
 # -----------------------------------------------------------------------------
-# See how Rs_annual is related to Rs_annual_bahn_Temp
+# See how Rs_annual is related to Rs_annual_bahn (using TS, T_Annual, and MAT as predictor)
 Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F ) {
   printlog( SEPARATOR )
   if( name != "" ) {
@@ -81,7 +84,7 @@ Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F ) {
 
 # ----------------------------------------------------------------------------- BEGAIN
 # See how Rs_annual is related to Rs_annual_bahn_Temp
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn, Rs_annual_bahn_TS)
+TSTSMAT_test(srdb, srdb$Rs_annual_bahn, panel_lab = '(a) TS as predictor')
 test_TS <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn)
 m_TS <- test_TS[[ 1 ]]
 m1_TS <- test_TS[[ 2 ]]
@@ -91,7 +94,7 @@ intercept_test
 slope_test
 
 # TAnnual
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual)
+TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual, panel_lab = '(b) T_Annual as predictor')
 test_TAnnual <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_TAnnual)
 m_TAnnual <- test_TAnnual[[ 1 ]]
 m1_TAnnual <- test_TAnnual[[ 2 ]]
@@ -101,7 +104,9 @@ intercept_test
 slope_test
 
 # MAT
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT)
+subset(srdb,is.na(srdb$Rs_annual_bahn_TAnnual) )
+
+TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT, panel_lab = '(c) MAT as predictor')
 test_MAT <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_MAT)
 m_MAT <- test_MAT[[ 1 ]]
 m1_MAT <- test_MAT[[ 2 ]]
@@ -111,11 +116,12 @@ intercept_test
 slope_test
 
 # ----------------------------------------------------------------------------- END
-
+getwd()
 # output figure
-tiff("5-TSTAMAT_comparison.tiff", width = 6, height = 8, pointsize = 1/300, units = 'in', res = 300)
-grid.arrange(TSTSMAT_test(srdb, srdb$Rs_annual_bahn), TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual)
-             , TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT), ncol = 1, nrow = 3)
+tiff("/Users/jian107/PNNL/bahn-rs-test/RTSoil/outputs/5-TSTAMAT_comparison.tiff", width = 6, height = 8, pointsize = 1/300, units = 'in', res = 300)
+grid.arrange(TSTSMAT_test(srdb, srdb$Rs_annual_bahn, panel_lab = '(a) TS as predictor')
+             , TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual, panel_lab = '(b) T_Annual as predictor')
+             , TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT, panel_lab = '(c) MAT as predictor'), ncol = 1, nrow = 3)
 dev.off()
 
 print( summary( lm( srdb$Rs_annual_bahn ~ srdb$Rs_annual, data=srdb ) ) )

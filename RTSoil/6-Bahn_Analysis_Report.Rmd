@@ -9,7 +9,6 @@ output:
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 
-
 ```{r, echo=FALSE} 
 
 ```
@@ -17,9 +16,50 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```{r}
 
 ```
-# 1 The spatial destribution of global Rs sites showed that we have much more measured data from the middle latitude region
+# 1. The spatial destribution of global Rs sites showed that we have much more measured data from the middle latitude region
 * It is difficult to measure soil respiration all year around in the cold region
 * Developed contries most located at Middle latitude region, thus recieved more funds to support the Rs measurements 
 
 ![Global spatial destribution of soil repiration sites](SRDB_V4_Fig1.png)
+
+# 2. It is obvious that Rs measurements from cold region is more importent, but how?
+Improve the Rs measure equipment so it can measure Rs in cold condition;
+Increasing funds;
+**Bahn's approach** [Bahn et al. (2004) Biogeosciences]
++ Rs measured at annuam mean temperature linearly related with annual Rs rate
++ Rs at mean temperature: soil respiration measured at annual mean temperature / monthly mean temperature / daily mean temperature
+
+# 3. The object of this analysis are
+* Whether Rs measured at annuam mean temperature can represent annual Rs rate
+* Whether Rs measured at monthly mean temperature can represent monthly mean Rs?
+* Whether Rs measured at daily mean temperature represent daily mean Rs?
+
+* When well represent and when not?
+* If not what is the mechanism?
+
+# 4. Results
+
+```{r message=FALSE, results='hide'}
+library(knitr)
+knit('6-bahn_Analysis_Report.Rmd', tangle=TRUE)
+source( '3-bahn_analysis.R' )
+```
+
+
+```{r}
+srdb_orig <- read.csv( INFN, stringsAsFactors=F )
+srdb <- srdb_orig
+srdb_05 <- filtration3( srdb_orig, 0.5, quiet=T )
+```
+
+4.1 Data used from SRDB_V4
+* Climate space figure
+
+```{r}
+figA <- climate_figure( srdb_orig )
+```
+
+
+
+# 5. More analysis in the future
 
