@@ -953,6 +953,14 @@ SELECT * FROM [DelClimateDB].[dbo].[Global_T] WHERE Latitude = 30.750 AND Longit
 UPDATE SRDBV4 SET Study_TS_Annual = 20.2, TS_Source = 'Table 1', Annual_TS_Coverage = 1 WHERE Study_number = 9563 AND Record_number = 5959
 UPDATE SRDBV4 SET Study_TS_Annual = 20.5, TS_Source = 'Table 1', Annual_TS_Coverage = 1 WHERE Study_number = 9563 AND Record_number = 5960
 UPDATE SRDBV4 SET Study_TS_Annual = 21.2, TS_Source = 'Table 1', Annual_TS_Coverage = 1 WHERE Study_number = 9563 AND Record_number = 5961
+
+UPDATE SRDBV4 SET Model_paramB = 0.0375  WHERE Study_number = 9563 AND Record_number = 5959
+UPDATE SRDBV4 SET Model_paramB = 0.0377  WHERE Study_number = 9563 AND Record_number = 5960
+UPDATE SRDBV4 SET Model_paramB = 0.0272  WHERE Study_number = 9563 AND Record_number = 5961
+UPDATE SRDBV4 SET Model_paramB = 0.0541  WHERE Study_number = 9563 AND Record_number = 5962
+UPDATE SRDBV4 SET Model_paramB = 0.045  WHERE Study_number = 9563 AND Record_number = 5963
+UPDATE SRDBV4 SET Model_paramB = 0.0311  WHERE Study_number = 9563 AND Record_number = 5964
+
 SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual
 	, Model_output_units, Record_number, Lat_Round, Long_Round, Study_TS_Annual, TAnnual_Del, Annual_coverage, Model_type, [Year], Annual_TS_Coverage, TS_Source
 	From SRDBV4 WHERE Study_number = 9563

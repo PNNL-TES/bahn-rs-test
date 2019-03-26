@@ -1,12 +1,12 @@
 ---
 title: "Summary of MB analysis"
 author: "Ben Bond-Lamberty"
-date: "March 22, 2014"
+date: "March 22, 2019"
 output: html_document
 ---
 
 [//]: # Start by running the main analysis script (silently and cached)
-```{r load_data, echo=FALSE, include=FALSE, cache=TRUE}
+```{r load_data, echo=FALSE, cache=TRUE}
 source( '3-bahn_analysis.R' )
 ```
 
@@ -58,7 +58,7 @@ intercept_test <- summary( m )$coefficients[ 1, 4 ]
 slope_test <- summary( m1 )$coefficients[ 2, 4 ]
 ```
 
-```{r mainmodelfit, echo=FALSE}
+```{r mainmodelfit2, echo=FALSE}
 summary( m_05 )    # prepared for us by 3-bahn_analysis.R, called above
 intercept_test <- summary( m_05 )$coefficients[ 1, 4 ]
 slope_test <- summary( m1_05 )$coefficients[ 2, 4 ]
@@ -92,6 +92,7 @@ Studies report annual SR based on measurements that may span the entire year or,
 
 ```{r figureD, echo=FALSE}
 #figD
+print()
 ```
 
 **How much of the unexplained variability in Figure B is due to climate data set used?**

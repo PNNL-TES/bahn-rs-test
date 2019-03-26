@@ -4,6 +4,7 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 getwd()
 source( "0-header.R" )
 
+dir <- dirname(rstudioapi::getSourceEditorContext()$path)
 # install.packages("gridExtra")
 library("gridExtra")
 INFN 			<- "MGRsD-data-processed.csv"
@@ -118,7 +119,8 @@ slope_test
 # ----------------------------------------------------------------------------- END
 getwd()
 # output figure
-tiff("/Users/jian107/PNNL/bahn-rs-test/RTSoil/outputs/5-TSTAMAT_comparison.tiff", width = 6, height = 8, pointsize = 1/300, units = 'in', res = 300)
+# tiff( paste(dir,"outputs","5-TSTAMAT_comparison.tiff", sep = "/" ), width = 6, height = 8, pointsize = 1/300, units = 'in', res = 300)
+pdf( paste(dir,"outputs","5-TSTAMAT_comparison.pdf", sep = "/" ), width = 6, height = 8 )
 grid.arrange(TSTSMAT_test(srdb, srdb$Rs_annual_bahn, panel_lab = '(a) TS as predictor')
              , TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual, panel_lab = '(b) T_Annual as predictor')
              , TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT, panel_lab = '(c) MAT as predictor'), ncol = 1, nrow = 3)

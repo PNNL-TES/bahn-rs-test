@@ -2,7 +2,9 @@
 title: "5-Bahn_TS_TA_MAT"
 author: "Jinshi"
 date: "March 14, 2019"
-output: word_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 

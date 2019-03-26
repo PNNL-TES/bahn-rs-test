@@ -414,7 +414,8 @@ ORDER BY Study_number
 
 --SELECT Model_type FROM SRDBV4
 
-SELECT Distinct Model_type FROM [dbo].[SRDBV4]
+-- MGRsD, MGRsD + TAIR, Rs_Ts_Relationship
+SELECT * FROM [dbo].[SRDBV4]
 WHERE Latitude IS NOT NULL 
 	AND Longitude IS NOT NULL 
 	AND Study_midyear IS NOT NULL
@@ -425,6 +426,7 @@ WHERE Latitude IS NOT NULL
 	AND Model_paramB IS NOT NULL
 	AND Manipulation = 'None'
 	AND Study_TS_Annual IS NOT NULL
+	AND TS_Source like 'MGRsD'
 
 
 /*
@@ -440,3 +442,7 @@ WHERE Latitude IS NOT NULL
 	AND Manipulation = 'None'
 ORDER BY Study_number
 */
+
+SELECT SRDBV4.Model_type, SRDBV4.Site_name, Model_paramA, Model_paramB, Model_paramC, Model_paramD, Rs_annual, Study_TS_Annual
+	, Model_output_units, Record_number, Latitude, Longitude, Study_TS_Annual, TAnnual_Del, Model_type
+	From SRDBV4 WHERE Study_number = 5458

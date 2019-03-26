@@ -5,7 +5,8 @@
 # Source'd by all the processing scripts (1-, 2-, etc) before they run
 
 rm (list = ls())
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+wk_dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(wk_dir)
 getwd()
 
 OUTPUT_DIR		<- "outputs/"

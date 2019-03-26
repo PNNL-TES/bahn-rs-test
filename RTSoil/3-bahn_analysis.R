@@ -5,10 +5,15 @@
 # steps 1 (matching with climate data) and 2 (computing Rs at MAT)
 
 rm (list = ls())
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+R_dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+setwd(R_dir)
 getwd()
 
 source( "0-header.R" )
+# install.packages("data.table")
+library('data.table')
+# install.packages('sqldf')
+library(sqldf)
 
 SCRIPT			<- "3-bahn_analysis.R"
 INFN 			<- "MGRsD-data-processed.csv"
@@ -199,10 +204,10 @@ global_tair_dataset_effect <- function( srdb_orig ) {
 # when more of the year is measured
 # This test is meaningless because the studies include here all > 1yr data
 
-AC_test <- function( sdata ) {
+AC_test <- function( sdata, coverage, var_sav ) {
 	printlog( SEPARATOR )
 	printlog( "How does annual coverage affect this relationship?" )
-	sdata$AC2 <- cut( sdata$Annual_TS_Coverage, 3 ) #c( 0, 0.33, 0.67, 1 ), right=F )
+	sdata$AC2 <- cut( coverage, c( 0, 0.5, 0.95, 1 ), right=T )  #c( 0, 0.33, 0.67, 1 ), right=F )
 	m <- lm( Rs_annual_bahn~Rs_annual * AC2, data=sdata )
 	print( summary( m ) )
 	printlog( SEPARATOR )
@@ -218,7 +223,7 @@ AC_test <- function( sdata ) {
 	p <- qplot( Rs_annual, Rs_annual_bahn, data=subset( sdata, !is.na( AC2 ) ), color=AC2 )
 	p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
 	print( p )
-	saveplot( "3-AC_effect" )	
+	saveplot( paste("3-AC_effect", var_sav))	
 }
 
 
@@ -359,10 +364,11 @@ climate_figure <- function( srdb, name="" ) {
 # -----------------------------------------------------------------------------
 # Function 12: whether different TS source have effect
 
-unique(srdb$TS_Source)
 TS_Source_test <- function( sdata ) { 
   sdata$TS_Source2 <- 
-    ifelse( sdata$TS_Source == 'Rs_Ts_Relationship', "Rs Ts Relationship", ifelse(sdata$TS_Source == 'MGRsD', "From MGRsD", "From Paper"))
+    ifelse( sdata$TS_Source == 'Rs_Ts_Relationship', "Rs Ts Relationship"
+            , ifelse(sdata$TS_Source == 'MGRsD', "From MGRsD",
+                     ifelse(grepl("TAIR_Del", sdata$TS_Source, fixed = TRUE), 'Partly from TAIR', "From Paper" ) )  )
   
   p <- qplot( Rs_annual, Rs_annual_bahn, data=sdata, color=TS_Source2 )
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
@@ -389,6 +395,11 @@ srdb <- srdb_orig
 srdb_05 <- filtration3( srdb_orig, 0.5, quiet=T )
 
 # relationship between reported Rs_Annual and calculated Rs_Annual based on the model from paper
+srdb$TS_Source2 <- 
+  ifelse( srdb$TS_Source == 'Rs_Ts_Relationship', "Rs Ts Relationship"
+          , ifelse(srdb$TS_Source == 'MGRsD', "From MGRsD",
+                   ifelse(grepl("TAIR_Del", srdb$TS_Source, fixed = TRUE) , 'TAIR_Del', "From Paper" ) )  )
+
 p <- qplot(Rs_TAIR*365/0.9645, Rs_annual, data=srdb, color = TS_Source2)
 p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) + 
   xlab (expression ("Annual Rs predicted by model using TS (g C/ m"^2*"/yr)")) +
@@ -433,9 +444,9 @@ figB_05 <- Rs_comparion_figure( srdb_05 )
 figC <- RC_test( srdb )
 
 # What's the effect of annual coverage?
-
-# Changed to TS coverage
-AC_test( srdb )
+# Changed function so it can test both Rs_coverage and TS coverage
+AC_test( srdb, srdb$Annual_TS_Coverage, 'TS_coverage' )
+AC_test( srdb, srdb$Annual_coverage, 'Rs_coverage' )
 
 # Report updated values for Bahn (2010) relationship based on SRDB
 compute_Rs_annual_bahn( srdb )
@@ -446,6 +457,12 @@ compute_Rs_annual_bahn( srdb )
 climate_variability_test( srdb )
 
 # Does TS source afffects result
+unique(srdb$TS_Source)
+unique(srdb$TS_Source2)
+# length(srdb[srdb$TS_Source %like% "^TAIR_Del",1])
+# sqldf( "SELECT TS_Source FROM srdb WHERE TS_Source LIKE '%TAIR_Del' ")
+# filter(subset(srdb, select = 'TS_Source'), grepl("TAIR_Del", srdb$TS_Source, fixed = TRUE))
+
 fig_Ts <- TS_Source_test(srdb)
 
 # Finished in 2-bahn_climate_udel.R
