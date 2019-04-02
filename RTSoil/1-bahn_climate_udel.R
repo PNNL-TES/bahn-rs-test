@@ -23,7 +23,6 @@ SCRIPT			<- "1-bahn_climate_udel.R"
 INFN		  	<- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-climate.csv"
 
-
 # ==============================================================================
 # plot and check results
 
@@ -31,10 +30,9 @@ OUTFN 			<- "MGRsD-data-climate.csv"
 fn <- paste( SRDB_DIR, INFN, sep="/" )
 printlog( "Reading", fn )
 srdb <- read.csv( fn, stringsAsFactors=F )
+sort(unique(srdb$Year))
 printdims( srdb )
-
 colnames (srdb)
-
 srdb[srdb$MAP > 4000 & !is.na(srdb$MAP),]$MAP_Del
 
 p1 <- qplot( MAT, MAT_Del, data=srdb ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )

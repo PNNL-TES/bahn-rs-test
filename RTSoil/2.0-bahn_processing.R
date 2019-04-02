@@ -255,6 +255,12 @@ printlog( "Reading", INFN )
 srdb <- read.csv( fn, stringsAsFactors=F )
 printdims( srdb )
 
+subset( srdb, is.na(srdb$Study_TS_Annual), select = c("Record_number") )
+subset( srdb, is.na(srdb$TAnnual_Del), select = c("Record_number") )
+
+subset( srdb, is.na(srdb$MAT_Del), select = c("MAT_Del") )
+subset( srdb, is.na(srdb$MAT_Del), select = c("MAT") )
+srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT_Del'] <- srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT']
 
 # In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
 # printlog( "Splitting model temperate range strings..." )
@@ -269,10 +275,11 @@ printdims( srdb )
 # srdb <- srdb[, c(1:126)]
 
 srdb <- compute_rs_mat( srdb, "TAnnual_Del")
-colnames(srdb)[126:129] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
+colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
+
 
 srdb <- compute_rs_mat( srdb, "MAT_Del")
-colnames(srdb)[130:133] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
+colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
 
 srdb <- compute_rs_mat( srdb, "Study_TS_Annual")
 
