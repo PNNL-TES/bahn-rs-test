@@ -1,25 +1,24 @@
 # 2-bahn_processing.R
-# BBL December 2013
+# JJ updated April 2019
 
 # Take Rs database and compute RS@MAT: soil respiration at mean annual air temperature
 
+R_DIR <- 'RTSoil'
+source( paste(R_DIR, "0-Basic_functions.R", sep = '/' ) )
 
-rm (list = ls())
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-getwd()
 
-source( "0-header.R" )
 # install.packages("stringr")
 loadlibs( c( "ggplot2", "stringr" ) )
 
 SCRIPT			<- "2-bahn_processing.R"
 INFN 			  <- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-processed.csv"
-SRDB_DIR    <- "~/PNNL/bahn-rs-test/MGRsD"
+SRDB_DIR    <- "MGRsD"
 fn <- paste( SRDB_DIR, INFN, sep="/" )
 
 CONVERSIONS		<- "srdb-conversions.csv"
 conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFactors=F )
+
 
 
 # -----------------------------------------------------------------------------
@@ -27,15 +26,12 @@ conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFacto
 # (RS@MAT) was linearly related to annual soil respiration.
 # Here we compute this value (µmol/m2/s) based on author equations and ancillary climate data 
 
-# test function
-# i = 1
-# srdb[ i, "Model_paramA" ]
-
-# i = which(srdb$Study_number == 1518)
-# s <- srdb
 
 # Update compute_rs_mat function allow temperature as input
-# Temp: "Study_TS_Annual", "Study_temp", "TAnnual_Del", "MAP_Del"
+# "Study_TS_Annual" means mean annual soil temperature
+# "TAnnual_Del" is annual air temperature from Delaware climate data
+# "MAP_Del" is mean annual air temperature between 1964 and 2014
+
 compute_rs_mat <- function( s, Temp ) {
 	# Compute model responses at MAT, taking into account different output units
 	printlog( "Reading unit conversions..." )
@@ -236,17 +232,11 @@ compute_rs_mat <- function( s, Temp ) {
 } # compute_rs_mat
 
 
-                              
-# [3] "Linear, R=a+b(T-c)"                               
-# [4] "Exponential, R=a exp(b(T-c))"                     
-# [5] "R10 (L&T), R=a exp(b((1/c)-(1/T+d))(WTL), Rh"     
-# [7] "Polynomial, R=a+b(T-d)+c(T-d)^2"                  
-# [8] "R10 (L&T), R=a exp(b((1/c)-(1/T-d))"
-
 # ==============================================================================
-# Main
+# Main computation
+# In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
 
-sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
+sink( paste0(R_DIR,"/", LOG_DIR, SCRIPT, ".txt" ), split=T )
 printlog( "Welcome to", SCRIPT )
 
 theme_set( theme_bw() )
@@ -254,35 +244,29 @@ theme_set( theme_bw() )
 printlog( "Reading", INFN )
 srdb <- read.csv( fn, stringsAsFactors=F )
 printdims( srdb )
-
+colnames( srdb )
 subset( srdb, is.na(srdb$Study_TS_Annual), select = c("Record_number") )
 subset( srdb, is.na(srdb$TAnnual_Del), select = c("Record_number") )
 
 subset( srdb, is.na(srdb$MAT_Del), select = c("MAT_Del") )
 subset( srdb, is.na(srdb$MAT_Del), select = c("MAT") )
+# three MAT_Del na values were replaced by MAT reported from paper
 srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT_Del'] <- srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT']
 
-# In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
-# printlog( "Splitting model temperate range strings..." )
-# x <- str_split_fixed( srdb$Model_temp_range, ",", 2 )
-# srdb$mtr_low <- as.numeric( x[ , 1 ] )
-# srdb$mtr_high <- as.numeric( x[ , 2 ] )
-
-# Temp: "Study_TS_Annual", "Study_temp", "TAnnual_Del", "MAP_Del"
-
-# srdb <- compute_rs_mat( srdb, "Study_temp") # only 7 records
-# length( subset (srdb, !is.na(srdb$Rs_annual_bahn), c(1)) )
-# srdb <- srdb[, c(1:126)]
-
+# Using TAnnual predict Rs_MAT
 srdb <- compute_rs_mat( srdb, "TAnnual_Del")
 colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
 
-
+# Using MAT predict Rs_MAT
 srdb <- compute_rs_mat( srdb, "MAT_Del")
 colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
 
+# Using mean annual soil temperature predict Rs_MAT
 srdb <- compute_rs_mat( srdb, "Study_TS_Annual")
 
+
+# **********************************************************************************
+# output data
 
 printlog( "Diagnostic plot..." )
 srdb$Rs_annual_bahn_err <- with( srdb, round( abs( ( Rs_annual_bahn-Rs_annual ) / Rs_annual ), 2 ) )
@@ -293,20 +277,10 @@ srdb[ srdb$higherr, "labl" ] <- srdb[ srdb$higherr, "Record_number" ]
 srdb$TAIR_LTM_dev <- with( srdb, abs( MAT_Del - MAT ) )
 srdb$TAIR_dev <- with( srdb, abs( TAnnual_Del - Study_temp ) )
 
-p <- ggplot( srdb[srdb$Rs_annual_bahn < 40000, ], aes( Rs_annual, Rs_annual_bahn ) ) 
-p <- p + geom_abline( slope=1, linetype=2 ) + geom_smooth( method='lm' )
-p <- p + geom_text( aes( label=labl ), size=2.5, vjust=-1, position="jitter" )
-p1 <- p + geom_point( aes( color=mtr_out ) ) 
-print( p1 )
-saveplot( "2-Diagnostic1" )
-saveplot( "2-Diagnostic2", p + geom_point( aes( color=( TAIR_LTM_dev ) ) ) )
-saveplot( "2-Diagnostic3", p + geom_point( aes( color=( TAIR_dev ) ) ) )
-saveplot( "2-Diagnostic4", p + geom_point( aes( color=( Ecosystem_type ) ) ) )
-
 printlog( "Writing", OUTFN )
 
 srdb <- srdb[!is.na(srdb$Rs_annual_bahn),]
-write.csv( srdb, OUTFN, row.names=F )
+write.csv( srdb, paste(R_DIR,OUTFN, sep = '/'), row.names=F )
 
 printlog( "All done with", SCRIPT )
 sink()
@@ -314,6 +288,6 @@ sink()
 colnames(srdb)
 
 # **********************************************************************************
-
+# END
 
 
