@@ -1,77 +1,53 @@
 ---
+title: Can soil respiration measured at MAT represent annual soil respiration?
+author: "Jinshi"
+date: "March 26, 2019"
 output:
   html_document: default
   word_document: default
 ---
 
+```{r preliminaries, message=FALSE, include=FALSE, echo=FALSE}
+# Set chunks defaults; these options will be applied to all subsequent chunks
+knitr::opts_chunk$set(results = 'hide', message = TRUE, include = TRUE, echo = FALSE,
+                      fig.height = 5, fig.width = 7)
 
-------------------------------
-Title: Can soil respiration measured at mean temperature represents actual soil respiration
-author: "Jinshi"
-date: "March 26, 2019"
-output:
-  html_document:
-    df_print: paged
-bibliography: bibliography.ris
-------------------------------
-
-
-```{r, results='hide', message=FALSE, include=FALSE, echo=FALSE}
-# create variables
+# Constants
 OUTPUT_DIR		<- "outputs/"
 LOG_DIR			<- "logs/"
 SEPARATOR		<- "-------------------+++++-------------------"
-
 # SCRIPT			<- "6-bahn_analysis.Rmd"
 INFN 			<- "MGRsD-data-processed.csv"
 OUTFN 			<- "MGRsD-data-final.csv"
 TDIFF_MAX 		<- 2	# max diff allowed btwn global dataset TAIR and observed
-```
 
+# Create output and log folders if they do not exist
+if(!file.exists(OUTPUT_DIR)) dir.create(OUTPUT_DIR)
+if(!file.exists(LOG_DIR)) dir.create( LOG_DIR )
 
-```{r ,results='hide', message=FALSE, include=FALSE, echo=FALSE} 
-# source all functions from 6-bahn_Analysis_function
+# Load required packages
+library(ggplot2)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+theme_set(theme_bw())
+library(lubridate)
+library(kableExtra)
+library(cowplot)
+library(knitr)
+
+# Source all needed functions
 source('0-Basic_functions.R')
 source('6-bahn_Analysis_functions.R')
-```
 
-
-```{r, results='hide', message=FALSE, include=FALSE, echo=FALSE}
-# load package
-liblist <- c("ggplot2", "reshape", 'data.table', 'sqldf', "gridExtra",
-             'tidyverse','dplyr','tidyr',"ggplot2", "lubridate", 'kableExtra', 'lattice', 'cowplot', 'drake', 'knitr')
-new.packages <- liblist[!(liblist %in% installed.packages()[,"Package"])]
-    # if( !loadedlibs[ lib ] ) install.packages(new.packages) # need create loadedlibs
-if(length(new.packages)) install.packages(new.packages)
-loadlibs(liblist)
-# library("ggplot2")
-# library('reshape')
-theme_set(theme_bw())
-```
-
-
-```{r, results='hide', echo=FALSE}
-# load data
+# Load data
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
 srdb_orig <- read.csv( INFN, stringsAsFactors=F )
 srdb <- srdb_orig
 ```
 
 
-```{r, results='hide', echo=FALSE}
-# main function 1 -- create outputs and log folder if not exist
-if( !file.exists( OUTPUT_DIR ) ) {
-	# printlog( "Creating", OUTPUT_DIR )
-	dir.create( OUTPUT_DIR )
-}
-if( !file.exists( LOG_DIR ) ) {
-	# printlog( "Creating", LOG_DIR )
-	dir.create( LOG_DIR )
-}
-```
-
-
-# 1. The spatial destribution of global Rs sites 
+# 1. The spatial distribution of global Rs sites 
 * We have much more measured Rs from the middle latitude region
 * It is difficult to measure soil respiration all year around in the cold region
 * Developed contries most located at Middle latitude region, thus recieved more funds to support the Rs measurements 
@@ -83,7 +59,7 @@ if( !file.exists( LOG_DIR ) ) {
 * Increase funds input
 * Measured once per day to get daily mean
 
-```{r, results='hide', include=T, Message=FALSE, echo=FALSE, fig.width=7, fig.height=5}
+```{r, message=FALSE}
   # Rs_mat_Rs_diurnal()
 ```
 
@@ -130,13 +106,13 @@ if( !file.exists( LOG_DIR ) ) {
 * Regression tree modeling?
 
 
-```{r, results='hide', message=FALSE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r, message=FALSE, warning=FALSE}
 figA <- climate_figure( srdb_orig )
 ```
 
 
 ## 3.2 test the relationship between Rs_annual and Rs_mat
-```{r, results='show', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7, echo=FALSE}
+```{r, results='show'}
 # Report updated values for Bahn (2010) relationship based on SRDB
 compare_Rs_annual_Rs_TAIR( srdb_orig )
 ```
@@ -144,13 +120,13 @@ compare_Rs_annual_Rs_TAIR( srdb_orig )
 
 ## 3.3 Ts sources (MGRsD, MGRsD_TAIR, From paper, Rs_Ts_relationship)
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # Does TS source afffects result, function 3.2
 fig_Ts <- TS_Source_test(srdb)
 ```
 
 ## 3.4 Annual Rs or Ts coverage effect
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # What's the effect of annual coverage?
 # Changed function so it can test both Rs_coverage and TS coverage
 AC_test( srdb, srdb$Annual_TS_Coverage, 'TS_coverage', 'Effects of soil temperature coverage on Rs_Annual vs. Rs_annual_bahn' )
@@ -161,7 +137,7 @@ AC_test( srdb, srdb$Annual_coverage, 'Rs_coverage', 'Effects of air temperature 
 ## 3.4.1 Test whether outliers affect the regression (need update)
 * Conclusion: need update the code and results 
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 srdb_01 <- filtration1(srdb_orig)
 figB_01 <- Rs_comparion_figure( srdb_01,'3.4.1_Test outlier', "Test whether outliers affect Rs_Annual vs. Rs_annual_bahn" )
 test_extreme <- Rs_annual_bahn_test(srdb_01, srdb_01$Rs_annual_bahn, var_title = 'Residual plot of outlier testing')
@@ -183,7 +159,7 @@ slope_test
 * TAIR_dev <- with( srdb, abs( TAnnual_Del - Study_temp ) )
 * Figure E. Effect of maximum allowed divergence between global climate data set and site-specific air temperature, when given. As we throw out data points with high divergence, R2 goes up (top panel) and RSE goes down (bottom, g C m-2 yr-1).
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.width=5, fig.height= 9}
+```{r}
 results <- data.frame()
 for( i in c( 6, 4, 2, 1, 0.5, 0.25 ) ) {
   dat <- filtration3( srdb_orig, i, quiet=T )
@@ -213,7 +189,7 @@ print( p )
 ```
 
 
-```{r, , results='hide', message=TRUE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 srdb_03 <- filtration3( srdb_orig, 1 )
 figB_03 <- Rs_comparion_figure( srdb_03,'3.4.2_TAIR_LTM_dev set to 1', 'Plot the results when difference between TAIR \nfrom paper and TAIR from Delaware > 1' )
 test_TS <- Rs_annual_bahn_test(srdb_03, srdb_03$Rs_annual_bahn, var_title = 'Residual plot of TAIR difference testing')
@@ -228,7 +204,7 @@ slope_test
 
 ## 3.4.3 Effect of maximum allowed divergence between annual precipitation from paper and Del
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.width=5, fig.height= 9}
+```{r}
 results <- data.frame()
 for( i in c( seq(50, 3000, 200) ) ) {
   dat <- filtration4( srdb_orig, i, quiet=T )
@@ -263,7 +239,7 @@ print( p )
 ## 4.1 Using Ts, TAnnual or MAT
 ### 4.1.1 Using soil temperature
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7 }
+```{r }
 # See how Rs_annual is related to Rs_annual_bahn_Temp
 TSTSMAT_test(srdb, srdb$Rs_annual_bahn, panel_lab = '(a) TS as predictor', var_title = 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
 test_TS <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn, var_title = 'Residual plot of Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
@@ -277,7 +253,7 @@ slope_test
 ```
 
 ### 4.1.2 Using T_Annual
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, warning=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 # TAnnual, function 
 TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual, panel_lab = '(b) T_Annual as predictor', 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual TAIR predict Rs_MAT')
 test_TAnnual <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_TAnnual, var_title = 'Residual plot')
@@ -292,7 +268,7 @@ slope_test
 ```
 
 ### 4.1.3 Using MAT
-```{r, results='hide', message=TRUE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 # MAT, function 
 TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT, panel_lab = '(c) MAT as predictor', 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
 test_MAT <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_MAT, var_title = 'Residual plot')
@@ -309,7 +285,7 @@ slope_test
 ## 4.2 Analysis when Rs_mat cannot represent Rs_annual
 
 ## 4.2.2 Does Ecosystem_type affects the relationship between Rs_annual and Rs_mat
-```{r filtration_mk, message=TRUE, include=TRUE, echo=FALSE, fig.height = 8, fig.width = 5}
+```{r filtration_mk, fig.height = 8, fig.width = 5}
 var_eco <- sort(unique(srdb$Ecosystem_type)) # only two desert records
 var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana and natural only less than three data points available
 # create a data frame hold regression results for removed certain ecosystem type and specific ecosystem alone
@@ -379,7 +355,7 @@ print( p_kp )
 
 
 
-```{r agriculture, results='hide', message=TRUE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r agriculture, warning=FALSE}
 # Take agriculture as an example to test
 # Move agriculture from srdb -- no big effect
 srdb_mv_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Agriculture', mk = T )
@@ -404,7 +380,7 @@ intercept_kp_ag
 print(paste('Agriculture alone, p value for slope = ', round(summary( m1_kp_ag )$coefficients[ 2, 4 ],2), sep = ""))
 ```
 
-```{r wetland, results='hide', message=TRUE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r wetland, warning=FALSE}
 # Take wetland as an example to test
 # Move wetland from srdb -- no big effect
 srdb_mv_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = T )
@@ -430,7 +406,7 @@ slope_kp_wet
 ```
 
 ## 4.2.3 Does Meas_method affects the relationship
-```{r, results='hide', message=TRUE, include=TRUE, warning=FALSE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 # Whether measure method affects
 # unique(srdb$Meas_method)
 # c( "IRGA", "Gas chromatography", "Gas Chromatography" )
@@ -462,7 +438,7 @@ slope_kp_IRGA
 ```
 
 ### 4.2.4 RA or RH dominated sites differ?
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # How do autotrophic- versus heterotrophic-dominated systems differ?
 # Figure C. Difference between RA-dominated sites (RC_annual>0.5 is TRUE) 
 # and RH-dominated ones (RC_annual>0.5 is FALSE).
@@ -471,7 +447,7 @@ figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 
 ### 4.2.5 Biome effect
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # subset(srdb_orig, srdb_orig$Biome == 'Arctic') # only one record
 print( summary( lm( Rs_annual_bahn ~ Rs_annual * Biome, data=srdb ) ) )
 p <- ggplot( srdb_orig, aes( Rs_annual, Rs_annual_bahn, color= Biome) )
@@ -482,7 +458,7 @@ print( p )
 ```
 
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.width=5, fig.height = 8}
+```{r, fig.width=5, fig.height = 8}
 # move and keep by Biome
 var_filt <- sort(unique(srdb$Biome)) # only two desert records
 var_filt <- var_filt[c(-1)] # n_arctic = 1
@@ -547,7 +523,7 @@ print( p_kp )
 
 
 ## 4.2.6 TAIR and precipitation variability affect?
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # How much variability is due to inaccuracies in the global TAIR data?
 # Do ecosystems with more-variable climates exhibit different trends?
 climate_variability_test( srdb, var_title_T = 'Test TAIR variability and its effect on Rs_Annual vs. Rs_annual_bahn'
@@ -555,17 +531,17 @@ climate_variability_test( srdb, var_title_T = 'Test TAIR variability and its eff
 ```
 
 ## 4.2.7 Does drought affect?
-```{r, results='hide', message=TRUE, include=TRUE,warning=FALSE , echo=FALSE, fig.height = 5, fig.width = 7}
+```{r, warning=FALSE}
 climate_MAP_test (srdb, 'Test how MAP affects the relationship between\n Rs_Annual and Rs_annual_bahn')
 ```
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # Do drought effects different trends?
 SPI_test( srdb, 'Test how SPI affects the relationship between\n Rs_Annual and Rs_annual_bahn' ) #SPI can identify the drout of a year compare to the past 50 years (1964-2014)
 ```
 
 
-```{r, results='hide', message=TRUE, include=TRUE, echo=FALSE, fig.height = 5, fig.width = 7}
+```{r}
 # Do drought effects different trends?
 PDSI_test( srdb, 'Test how PDSI affects the relationship between\n Rs_Annual and Rs_annual_bahn' ) # need a new SPI data
 ```
@@ -582,7 +558,7 @@ PDSI_test( srdb, 'Test how PDSI affects the relationship between\n Rs_Annual and
 * 4 Think about application
 * 5 Update bahn model with more predictors or using regression tree method?
 
-```{r quality check by study ID, message=TRUE, include=TRUE, echo=FALSE}
+```{r quality check by study ID}
 # subtest_1(5227)
 ```
 
