@@ -1,12 +1,6 @@
 
-# rm(list = ls())
-
-# y <- c(1:10)
-# x <- c(11:20) 
-# summary(lm(y~x))
-
 # ****************************************************************************************************
-# I. Filtration functions for bahn-rs-analysis
+# I. Rs_MDT ~ Rs_diurnal
 # ****************************************************************************************************
 
 # Rs_mat for Rs_diurnal
@@ -70,7 +64,11 @@ Rs_mat_Rs_diurnal <- function () {
   print(p3)
 }
 
-# -----------------------------------------------------------------------------
+
+# ****************************************************************************************************
+# II. Filtration functions for bahn-rs-analysis
+# ****************************************************************************************************
+
 # get ride of extreme high values
 filtration1 <- function( srdb ) {
   fields <- c( 	"Record_number", "Study_number",
@@ -173,61 +171,6 @@ filtration4 <- function( srdb, pdiff_max=50, quiet=F ) {
 
 # colnames(srdb)
 # max(abs(srdb$MAP_Del - srdb$MAP), na.rm = T)
-
-# ****************************************************************************************************
-#  II. Subset function for quality check
-# ****************************************************************************************************
-# create select subtest function
-subtest_1 <- function (n) {
-  subtest <- srdb[ which (srdb$Study_number == n), 
-                   c( if( !is.na( srdb[which(srdb$Study_number == n),]$Study_temp ) ) {
-                     which (colnames(srdb) == "Study_temp")
-                   } 
-                   else if ( !is.na( srdb[which(srdb$Study_number == n),]$TAnnual_Del )) {
-                     which (colnames(srdb) == "TAnnual_Del")
-                   }
-                   else {
-                     which (colnames(srdb) == "MAT")
-                   } 
-                   , which (colnames(srdb) == "Model_paramA")
-                   , which (colnames(srdb) == "Model_paramB")
-                   , which (colnames(srdb) == "Model_paramC")
-                   , which (colnames(srdb) == "Model_paramD")
-                   , which (colnames(srdb) == "Model_output_units")
-                   , which (colnames(srdb) == "Model_type")
-                   , which (colnames(srdb) == "Record_number")
-                   , which (colnames(srdb) == "Study_number")
-                   , which (colnames(srdb) == "Rs_annual")
-                   , which (colnames(srdb) == "Rs_annual_bahn")
-                   , which (colnames(srdb) == "Rs_TAIR_units")
-                   ) ]
-  
-  colnames (subtest) <- c("T", "a", "b", "c", "d", "Model_output_units", "Model_type", "Record_number"
-                          , "Study_number", "Rs_annual", "Rs_annual_bahn", "Rs_TAIR_units")
-  
-  return (subtest)
-}
-
-subtest_2 <- function (mot) {
-  subtest <- srdb[which (srdb$Model_type == mot)
-                  , c(which (colnames(srdb) == "TAnnual_Del") 
-                      , which (colnames(srdb) == "Model_paramA")
-                      , which (colnames(srdb) == "Model_paramB")
-                      , which (colnames(srdb) == "Model_paramC")
-                      , which (colnames(srdb) == "Model_paramD")
-                      , which (colnames(srdb) == "Model_output_units")
-                      , which (colnames(srdb) == "Model_type")
-                      , which (colnames(srdb) == "Record_number")
-                      , which (colnames(srdb) == "Study_number")
-                      , which (colnames(srdb) == "Rs_annual")
-                      , which (colnames(srdb) == "Rs_annual_bahn")
-                      , which (colnames(srdb) == "Rs_TAIR_units")
-                  ) ]
-  colnames (subtest) <- c("T", "a", "b", "c", "d", "Model_output_units", "Model_type", "Record_number"
-                          , "Study_number", "Rs_annual", "Rs_annual_bahn", "Rs_TAIR_units")
-  
-  return (subtest)
-}
 
 
 # ****************************************************************************************************
@@ -335,16 +278,6 @@ AC_test <- function( sdata, coverage, var_sav, var_title ) {
   print( p )
   saveplot(outputDir = OUTPUT_DIR, pname =  paste("3-AC_effect", var_sav))	
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -601,3 +534,5 @@ plotdata <- function( sdata, name ) {
   
   invisible( sdata )
 }
+
+

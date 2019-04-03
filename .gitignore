@@ -48,3 +48,13 @@ climate_data/
 
 # Paper
 Papers/
+
+# Exclude Rmarkdown caches and images
+*_cache/
+*_files/
+*.html
+*.png
+
+# Exclude old 
+old/
+

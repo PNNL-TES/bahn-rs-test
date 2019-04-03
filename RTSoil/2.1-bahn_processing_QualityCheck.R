@@ -3,32 +3,7 @@
 # This code is for result check and quality check
 # ==============================================================================
 
-
-rm (list = ls())
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-getwd()
-
-source( "0-header.R" )
-# install.packages("stringr")
-loadlibs( c( "ggplot2", "stringr" ) )
-
-SCRIPT			<- "2-bahn_processing.R"
-INFN 			  <- "MGRsD-data-v4-TSoil.csv"
-OUTFN 			<- "MGRsD-data-processed.csv"
-SRDB_DIR    <- "E:/PNNL/bahn-rs-test/MGRsD"
-fn <- paste( SRDB_DIR, OUTFN, sep="/" )
-
-CONVERSIONS		<- "srdb-conversions.csv"
-conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFactors=F )
-
-sink( paste0( LOG_DIR, SCRIPT, ".txt" ), split=T )
-printlog( "Welcome to", SCRIPT )
-
-theme_set( theme_bw() )
-
-printlog( "Reading", OUTFN )
-srdb <- read.csv( fn, stringsAsFactors=F )
-printdims( srdb )
+srdb <- read.csv( "MGRsD-data-v4-TSoil.csv", stringsAsFactors=F )
 
 # In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
 # printlog( "Splitting model temperate range strings..." )

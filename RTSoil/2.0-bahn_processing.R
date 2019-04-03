@@ -2,31 +2,10 @@
 # JJ updated April 2019
 
 # Take Rs database and compute RS@MAT: soil respiration at mean annual air temperature
-
-R_DIR <- 'RTSoil'
-source( paste(R_DIR, "0-Basic_functions.R", sep = '/' ) )
-
-
-# install.packages("stringr")
-loadlibs( c( "ggplot2", "stringr" ) )
-
-SCRIPT			<- "2-bahn_processing.R"
-INFN 			  <- "MGRsD-data-v4-TSoil.csv"
-OUTFN 			<- "MGRsD-data-processed.csv"
-SRDB_DIR    <- "MGRsD"
-fn <- paste( SRDB_DIR, INFN, sep="/" )
-
-CONVERSIONS		<- "srdb-conversions.csv"
-conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFactors=F )
-
-
-
 # -----------------------------------------------------------------------------
 # Bahn et al.'s insight was that soil respiration at mean annual temperature
 # (RS@MAT) was linearly related to annual soil respiration.
 # Here we compute this value (µmol/m2/s) based on author equations and ancillary climate data 
-
-
 # Update compute_rs_mat function allow temperature as input
 # "Study_TS_Annual" means mean annual soil temperature
 # "TAnnual_Del" is annual air temperature from Delaware climate data
@@ -34,18 +13,16 @@ conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFacto
 
 compute_rs_mat <- function( s, Temp ) {
 	# Compute model responses at MAT, taking into account different output units
-	printlog( "Reading unit conversions..." )
+
 	# conversions <- read.csv( CONVERSIONS, stringsAsFactors=F )
-  conversions <- read.csv( paste( SRDB_DIR, CONVERSIONS, sep="/" ), stringsAsFactors=F )
 	
-	printlog( "Computing Rs @ mean annual temperature..." )
 	s$mtr_out <- F
 	um <- 0
 	uu <- 0
 	sv <- 0
 	for( i in 1:nrow( s ) ) {
 	
-		printlog( SEPARATOR )
+		
 		a <- s[ i, "Model_paramA" ]
 		b <- s[ i, "Model_paramB" ]
 		c <- s[ i, "Model_paramC" ]
@@ -64,12 +41,9 @@ compute_rs_mat <- function( s, Temp ) {
 		mt <- s[ i, "Model_type" ]
 		rn <- s[ i, "Record_number" ]
 		sn <- s[ i, "Study_number" ]
-		printlog( "Processing:", i, s[ i, "Author" ], "Record_number =", rn, "Study_number =", sn  )
-		printlog( "Model:", mt, a, b, c, d, "(", mtr, ")" )
-		printlog( "Output:", u, conv )
+		
 		
 		if( sum( conversions$Unit==u ) == 0 ) {
-			printlog( "***** ERROR Unknown unit", u, "record_number =", rn )
 			uu <- uu + 1
 			next
 		}
@@ -180,26 +154,20 @@ compute_rs_mat <- function( s, Temp ) {
 			rs <- a * exp( b / ((273.15 + c) * 8.314) * (1-(273.15+c)/ (T+273.15) ) )
 		} else if( mt == "Other" || mt == "" ) {
 			rs <- NA
-			printlog( "Skipping" )
 			next
 		} else {
 			rs <- NA
-			printlog( "***** ERROR Unknown model:", mt )
-			printlog( "record_number =", rn )
 			um <- um + 1
 			next
 		}
 		
 		if( is.na( rs ) ) {
-			printlog( "***** WARNING Computed rs is NA! record_number =", rn )
 			next
 		} else if( rs < 0 ) {
-			printlog( "***** WARNING Computed rs is <0! record_number =", rn )
 			next
 		} else {
 			rs_umol <- rs * conv
 			
-			printlog( "#", i, rn, ": Rs @", T, "C =", rs, u, "=", rs_umol, "umol/m2/s" )
 			s[ i, "Rs_TAIR_units" ] <- rs	
 			s[ i, "Rs_TAIR" ] <- rs_umol	
 
@@ -207,87 +175,23 @@ compute_rs_mat <- function( s, Temp ) {
 			
 			if( all( !is.na( mtr ) ) )
 				if( T < mtr[ 1 ] | T > mtr[ 2 ] ) {
-					printlog( "***** WARNING T =", T, "but model T range is (", mtr, ")" )
 					s[ i, "mtr_out" ] <- TRUE
 				}
 
 			if( !is.na( rs_umol ) && ( rs_umol < 0.01 || rs_umol > 20 ) ) {
-					printlog( "***** WARNING Screwy value", rs_umol )
-#					print( s[ i, ] )
 					sv <- sv + 1
 			} 			
 		}
 		# 455.8 * (subtest$rs * conv) ^ 1.0054
 		s[ i, "Rs_annual_bahn" ] <- 455.8 * ( rs_umol ^ 1.0054 )	# Bahn et al. function
 	} # for
-	
-	printlog( SEPARATOR )
-	printlog( "----- Summary -----" )
-	printlog( "Unknown units =", uu )
-	printlog( "Unknown model =", um )
-	printlog( "Screwy value  =", sv )
-	printlog( SEPARATOR )
-	
 	return( s )
 } # compute_rs_mat
 
 
-# ==============================================================================
-# Main computation
-# In SRDB_V4, range are seperated into Model_temp_min and Model_temp_max
-
-sink( paste0(R_DIR,"/", LOG_DIR, SCRIPT, ".txt" ), split=T )
-printlog( "Welcome to", SCRIPT )
-
-theme_set( theme_bw() )
-
-printlog( "Reading", INFN )
-srdb <- read.csv( fn, stringsAsFactors=F )
-printdims( srdb )
-colnames( srdb )
-subset( srdb, is.na(srdb$Study_TS_Annual), select = c("Record_number") )
-subset( srdb, is.na(srdb$TAnnual_Del), select = c("Record_number") )
-
-subset( srdb, is.na(srdb$MAT_Del), select = c("MAT_Del") )
-subset( srdb, is.na(srdb$MAT_Del), select = c("MAT") )
-# three MAT_Del na values were replaced by MAT reported from paper
-srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT_Del'] <- srdb[is.na(srdb$MAT_Del), colnames(srdb)=='MAT']
-
-# Using TAnnual predict Rs_MAT
-srdb <- compute_rs_mat( srdb, "TAnnual_Del")
-colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
-
-# Using MAT predict Rs_MAT
-srdb <- compute_rs_mat( srdb, "MAT_Del")
-colnames(srdb)[(length(colnames(srdb))-3):length(colnames(srdb))] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
-
-# Using mean annual soil temperature predict Rs_MAT
-srdb <- compute_rs_mat( srdb, "Study_TS_Annual")
 
 
-# **********************************************************************************
-# output data
 
-printlog( "Diagnostic plot..." )
-srdb$Rs_annual_bahn_err <- with( srdb, round( abs( ( Rs_annual_bahn-Rs_annual ) / Rs_annual ), 2 ) )
-srdb$higherr <- srdb$Rs_annual_bahn_err > .9 & !is.na( srdb$Rs_annual_bahn_err )
-srdb[ srdb$higherr, "labl" ] <- srdb[ srdb$higherr, "Record_number" ]
-# unique(srdb$labl)
-#srdb[ srdb$higherr, "labl" ] <- srdb[ srdb$higherr, "err" ]
-srdb$TAIR_LTM_dev <- with( srdb, abs( MAT_Del - MAT ) )
-srdb$TAIR_dev <- with( srdb, abs( TAnnual_Del - Study_temp ) )
 
-printlog( "Writing", OUTFN )
-
-srdb <- srdb[!is.na(srdb$Rs_annual_bahn),]
-write.csv( srdb, paste(R_DIR,OUTFN, sep = '/'), row.names=F )
-
-printlog( "All done with", SCRIPT )
-sink()
-
-colnames(srdb)
-
-# **********************************************************************************
-# END
 
 

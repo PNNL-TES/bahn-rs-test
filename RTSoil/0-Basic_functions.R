@@ -3,12 +3,6 @@
 # Basic functions
 # ****************************************************************************************************
 
-OUTPUT_DIR		<- "outputs/"
-LOG_DIR			<- "logs/"
-SEPARATOR		<- "-------------------"
-OUTCLIMDATA     <- "summarized_climate.csv"
-
-
 # 1 write data log wirh time-stamped output function
 printlog <- function( msg="", ..., ts=TRUE, cr=TRUE ) {
   if( ts ) cat( date(), " " )
@@ -17,18 +11,6 @@ printlog <- function( msg="", ..., ts=TRUE, cr=TRUE ) {
 } # printlog
 
 # 2 --------------------------------------------------------------------------------
-# Load requested libraries
-# loadlibs <- function( liblist ) {
-#   printlog( "Loading libraries..." )
-#   for( lib in liblist ) {
-#     printlog( "Loading", lib )
-#     new.packages <- liblist[!(liblist %in% installed.packages()[,"Package"])]
-#     # if( !loadedlibs[ lib ] ) install.packages(new.packages) # need create loadedlibs
-#     if(length(new.packages)) install.packages(new.packages)
-#   }
-#   require( lib, character.only=T )
-#   invisible( new.packages ) # Return a (temporarily) invisible copy of an object
-# } # loadlibs
 
 loadlibs <- function( liblist ) {
 	printlog( "Loading libraries..." )
