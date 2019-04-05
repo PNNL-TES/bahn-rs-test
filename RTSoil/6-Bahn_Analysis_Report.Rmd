@@ -16,7 +16,7 @@ knitr::opts_chunk$set(results = 'hide', message = TRUE, include = TRUE, echo = F
 # Constants
 OUTPUT_DIR		<- "outputs/"
 LOG_DIR			<- "logs/"
-SEPARATOR		<- "-------------------+++++-------------------"
+SEPARATOR		<- "-------------------------------------------"
 # SCRIPT			<- "6-bahn_analysis.Rmd"
 INFN 			<- "MGRsD-data-v4-TSoil.csv"
 OUTFN 			<- "MGRsD-data-final.csv"
@@ -27,8 +27,9 @@ OUTCLIMDATA     <- "summarized_climate.csv"
 if(!file.exists(OUTPUT_DIR)) dir.create(OUTPUT_DIR)
 if(!file.exists(LOG_DIR)) dir.create( LOG_DIR )
 
+# install.packages('cowplot')
 # Load required packages
-library(ggplot2)
+library(cowplot)
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -37,28 +38,30 @@ library(lubridate)
 library(kableExtra)
 library(cowplot)
 library(knitr)
+library("ggpubr")
+library(reshape)
 
 # Source all needed functions
 source('0-Basic_functions.R')
 source('6-bahn_Analysis_functions.R')
 source('2.0-bahn_processing.R')
 
-# Load data
-OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
-srdb_orig <- read.csv( INFN, stringsAsFactors=F )
-srdb_orig$TAIR_LTM_dev <- with( srdb_orig, abs( MAT_Del - MAT ) )
-srdb_orig$TAIR_dev <- with( srdb_orig, abs( TAnnual_Del - Study_temp ) )
-conversions <- read.csv( paste( "srdb-conversions.csv", sep="/" ), stringsAsFactors=F )
 ```
 
 
 
 ```{r, message='hide'}
 # calculate Rs_annual_bahn based on mean annual soil temperature, TAnnual, and MAT
+# Load data
+OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
+srdb_orig <- read.csv( INFN, stringsAsFactors=F )
+srdb_orig$TAIR_LTM_dev <- with( srdb_orig, abs( MAT_Del - MAT ) )
+srdb_orig$TAIR_dev <- with( srdb_orig, abs( TAnnual_Del - Study_temp ) )
+conversions <- read.csv( paste( "srdb-conversions.csv", sep="/" ), stringsAsFactors=F )
 
 printlog( "Reading", INFN )
-printdims( srdb_orig )
-colnames( srdb_orig )
+# printdims( srdb_orig )
+# colnames( srdb_orig )
 
 # three MAT_Del na values were replaced by MAT reported from paper
 srdb_orig[is.na(srdb_orig$MAT_Del), colnames(srdb_orig)=='MAT_Del'] <- 
@@ -77,14 +80,13 @@ srdb_orig <- compute_rs_mat( srdb_orig, "Study_TS_Annual")
 
 srdb_orig <- srdb_orig[!is.na(srdb_orig$Rs_annual_bahn),]
 srdb <- srdb_orig
-
+# srdb_orig <- srdb
 ```
 
 
 # 1. The spatial distribution of global Rs sites 
 
 * In daily and monthly time scale, we used this approach a lot
-Rs_mat_Rs_diurnal ()
 ```{r}
 Rs_mat_Rs_diurnal()
 ```
@@ -128,18 +130,9 @@ Rs data from cold regions are more important, but how to increase the number of 
 * Air temperature (University of Daleware global precipitation and air temperature data, 1964-2014, half degree spatial resolusion)
 * 823 records from 253 studies
 
-```{r}
-p1 <- qplot( MAT_Del, MAT,  data=srdb ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
-print( p1 )
+```{r 3.1.1 MAP from Delaware vs MAP from paper, warning = FALSE}
 
-p2 <- qplot( TAnnual_Del, Study_temp, data=srdb ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
-print( p2 )
-
-p3 <- qplot( MAP_Del, MAP, data=srdb ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
-print( p3 )
-
-p4 <- qplot( PAnnual_Del, Study_precip, data=srdb ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
-print( p4 )
+climate_Del_test()
 
 ```
 
@@ -157,50 +150,41 @@ print( p4 )
 * Regression tree modeling?
 
 
-```{r, message=FALSE, warning=FALSE}
+```{r 3.1.2 Coverage of MAP and MAT, message=FALSE, warning=FALSE}
 figA <- climate_figure( srdb_orig )
 ```
 
 
 ## 3.2 test the relationship between Rs_annual and Rs_mat
-```{r, results='show'}
+```{r 3.2 Rs_annual vs Rs_mat, results='show'}
 # Report updated values for Bahn (2010) relationship based on SRDB
 compare_Rs_annual_Rs_TAIR( srdb_orig )
+
+# test intercept
+
 ```
 
 
 ## 3.3 Ts sources (MGRsD, MGRsD_TAIR, From paper, Rs_Ts_relationship)
 
-```{r}
+```{r 3.3 Ts sources and effect}
 # Does TS source afffects result, function 3.2
 fig_Ts <- TS_Source_test(srdb)
 ```
 
 ## 3.4 Annual Rs or Ts coverage effect
 
-```{r}
+```{r 3.4.0 Rs or Ts coverage and effect}
 # What's the effect of annual coverage?
 # Changed function so it can test both Rs_coverage and TS coverage
-AC_test( srdb, srdb$Annual_TS_Coverage, 'TS_coverage', 'Effects of soil temperature coverage on Rs_Annual vs. Rs_annual_bahn' )
-AC_test( srdb, srdb$Annual_coverage, 'Rs_coverage', 'Effects of air temperature coverage on Rs_Annual vs. Rs_annual_bahn' )
+plot_grid(AC_test( srdb, srdb$Annual_TS_Coverage, var_title = 'Test Ts coverage' )
+          , AC_test( srdb, srdb$Annual_coverage, var_title = 'Test Rs coverage' ))
 
 ```
 
 ## 3.4.1 Test whether outliers affect the regression (need update)
 * Conclusion: need to update the code and results 
-
-```{r, warning=FALSE}
-srdb_01 <- filtration1(srdb_orig)
-figB_01 <- Rs_comparion_figure( srdb_01,'3.4.1_Test outlier', "Test whether outliers affect Rs_Annual vs. Rs_annual_bahn" )
-test_extreme <- Rs_annual_bahn_test(srdb_01, srdb_01$Rs_annual_bahn, var_title = 'Residual plot of outlier testing')
-m_extreme <- test_extreme[[ 1 ]]
-m1_extreme <- test_extreme[[ 2 ]]
-intercept_test <- summary( m_extreme )$coefficients[ 1, 4 ]
-slope_test <- summary( m1_extreme )$coefficients[ 2, 4 ]
-intercept_test
-slope_test
-```
-
+# moved to section 4.1
 
 
 ## 3.4.2 Effect of maximum allowed divergence between global climate data set and site-specific air temperature
@@ -212,11 +196,11 @@ slope_test
 * Figure E. Effect of maximum allowed divergence between global climate data set and site-specific air temperature, when given. As we throw out data points with high divergence, R2 goes up (top panel) and RSE goes down (bottom, g C m-2 yr-1).
 
 
-```{r}
+```{r 3.4.2 test divergence, fig.height= 8, fig.width=4}
 results <- data.frame()
 for( i in c( 6, 4, 2, 1, 0.5, 0.25 ) ) {
   dat <- filtration3( srdb_orig, i, quiet=T )
-  m <- lm(Rs_annual_bahn ~ Rs_annual, data = dat)
+  m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  tdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
                            p_inter <- round(summary(m)$coefficients[1,4],4),
@@ -236,32 +220,20 @@ results <- results[, 1:7]
 d <- melt( results, id.vars=1 )
 p <- qplot( TAIR_LTM_dev, value, data=d, geom=c( "point", "line" ) ) +
   facet_grid( variable~., scales = "free" ) + 
-  xlab('Absolute diff between TAIR_Del and temp from paper (mm)' ) + 
+  xlab( expression('Absolute diff between TAIR_Del and temp from paper (' * degree~C * ")") ) + 
   ggtitle ('Test effects of temperature difference between paper \nreported TAIR and TAIR from Delaware climate data')
 print( p )
 ```
 
 
-```{r, warning=FALSE}
-srdb_03 <- filtration3( srdb_orig, 1 )
-figB_03 <- Rs_comparion_figure( srdb_03,'3.4.2_TAIR_LTM_dev set to 1', 'Plot the results when difference between TAIR \nfrom paper and TAIR from Delaware > 1' )
-test_TS <- Rs_annual_bahn_test(srdb_03, srdb_03$Rs_annual_bahn, var_title = 'Residual plot of TAIR difference testing')
-m_TS <- test_TS[[ 1 ]]
-m1_TS <- test_TS[[ 2 ]]
-intercept_test <- summary( m_TS )$coefficients[ 1, 4 ]
-slope_test <- summary( m1_TS )$coefficients[ 2, 4 ]
-intercept_test
-slope_test
-```
-
 
 ## 3.4.3 Effect of maximum allowed divergence between annual precipitation from paper and Del
 
-```{r}
+```{r 3.4.3 test precipitation divergence, fig.height=8, fig.width=4}
 results <- data.frame()
 for( i in c( seq(50, 3000, 200) ) ) {
   dat <- filtration4( srdb_orig, i, quiet=T )
-  m <- lm(Rs_annual_bahn ~ Rs_annual, data = dat)
+  m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  pdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
                            p_inter <- round(summary(m)$coefficients[1,4],4),
@@ -292,48 +264,25 @@ print( p )
 ## 4.1 Using Ts, TAnnual or MAT
 ### 4.1.1 Using soil temperature
 
-```{r }
-# See how Rs_annual is related to Rs_annual_bahn_Temp
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn, panel_lab = '(a) TS as predictor', var_title = 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
-test_TS <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn, var_title = 'Residual plot of Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
-m_TS <- test_TS[[ 1 ]]
-m1_TS <- test_TS[[ 2 ]]
-intercept_test <- summary( m_TS )$coefficients[ 1, 4 ]
-slope_test <- summary( m1_TS )$coefficients[ 2, 4 ]
-intercept_test
-print(paste('slope = ', round(summary( m1_TS )$coefficients[ 2, 1 ],3) , sep = ""))
-slope_test
+```{r 4.1 test outlier, warning=FALSE, fig.width=8}
+# srdb_01 <- filtration1(srdb_orig)
+# figB_01 <- Rs_comparion_figure( srdb_orig, name = '3.4.1_Test outlier', var_title = "Test outliers" )
+Rs_annual_bahn_test(srdb_orig, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 ```
+
 
 ### 4.1.2 Using T_Annual
 
 ```{r, warning=FALSE}
 # TAnnual, function 
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn_TAnnual, panel_lab = '(b) T_Annual as predictor', 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual TAIR predict Rs_MAT')
-test_TAnnual <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_TAnnual, var_title = 'Residual plot')
-m_TAnnual <- test_TAnnual[[ 1 ]]
-m1_TAnnual <- test_TAnnual[[ 2 ]]
-intercept_test <- summary( m_TAnnual )$coefficients[ 1, 4 ]
-slope_test <- summary( m1_TAnnual )$coefficients[ 2, 4 ]
-intercept_test
-print(paste('slope = ', round(summary( m1_TAnnual )$coefficients[ 2, 1 ],3) , sep = ""))
-slope_test
-
+Rs_annual_bahn_test(srdb, temp = 'Rs_annual_bahn_TAnnual', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 ```
 
 ### 4.1.3 Using MAT
 
 ```{r, warning=FALSE}
 # MAT, function 
-TSTSMAT_test(srdb, srdb$Rs_annual_bahn_MAT, panel_lab = '(c) MAT as predictor', 'Rs_Annual vs. Rs_annual_bahn \nwhen using mean annual Ts predict Rs_MAT')
-test_MAT <- Rs_annual_bahn_test(srdb, srdb$Rs_annual_bahn_MAT, var_title = 'Residual plot')
-m_MAT <- test_MAT[[ 1 ]]
-m1_MAT <- test_MAT[[ 2 ]]
-intercept_test <- summary( m_MAT )$coefficients[ 1, 4 ]
-slope_test <- summary( m1_MAT )$coefficients[ 2, 4 ]
-intercept_test
-print(paste('slope = ', round(summary( m1_MAT )$coefficients[ 2, 1 ],3) , sep = ""))
-slope_test
+Rs_annual_bahn_test(srdb, 'Rs_annual_bahn_MAT', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 ```
 
 
@@ -341,7 +290,7 @@ slope_test
 
 ## 4.2.2 Does Ecosystem_type affect the relationship between Rs_annual and Rs_mat?
 
-```{r filtration_mk, fig.height = 8, fig.width = 5}
+```{r filtration_mk, fig.height = 8, fig.width = 4}
 var_eco <- sort(unique(srdb$Ecosystem_type)) # only two desert records
 var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana and natural only less than three data points available
 # create a data frame hold regression results for removed certain ecosystem type and specific ecosystem alone
@@ -354,7 +303,7 @@ out <- data.frame()
 for (i in 1:length (var_eco)) {
   # a specific ecosystem removed 
   srdb_mv_eco <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = var_eco[i], mk = T )
-  lm_mv <- lm(Rs_annual_bahn ~ Rs_annual  , data = srdb_mv_eco) #unique(srdb_mv_eco$Ecosystem_type)
+  lm_mv <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_mv_eco) #unique(srdb_mv_eco$Ecosystem_type)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
   p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_eco ) )$coefficients[ 2, 4 ], 4)
@@ -366,7 +315,7 @@ for (i in 1:length (var_eco)) {
  
   # eco alone  
   srdb_kp_eco <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = var_eco[i], mk = F )
-  lm_kp <- lm(Rs_annual_bahn ~ Rs_annual  , data = srdb_kp_eco)
+  lm_kp <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_kp_eco)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
   p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_eco ) )$coefficients[ 2, 4 ], 4)
@@ -415,50 +364,27 @@ print( p_kp )
 # Take agriculture as an example to test
 # Move agriculture from srdb -- no big effect
 srdb_mv_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Agriculture', mk = T )
-figB_mv_ag <- Rs_comparion_figure( srdb_mv_ag, var_title = 'When agriculture data were removed' )
-test_mv_ag <- Rs_annual_bahn_test(srdb_mv_ag, srdb_mv_ag$Rs_annual_bahn, var_title = 'Residual plot')
-m_mv_ag <- test_mv_ag[[ 1 ]]
-m1_mv_ag <- test_mv_ag[[ 2 ]]
-intercept_mv_ag <- summary( m_mv_ag )$coefficients[ 1, 4 ]
-slope_mv_ag <- summary( m1_mv_ag )$coefficients[ 2, 4 ]
-intercept_mv_ag
-slope_mv_ag
+# figB_mv_ag <- Rs_comparion_figure( srdb_mv_ag, var_title = 'When agriculture data were removed' )
+Rs_annual_bahn_test(srdb_mv_ag, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 
 # Agriculture alone -- not significant differ
 srdb_kp_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, 'Agriculture', mk = F )
-figB_kp_ag <- Rs_comparion_figure( srdb_kp_ag, var_title = 'Only data from agriculture used' )
-test_kp_ag <- Rs_annual_bahn_test(srdb_kp_ag, srdb_kp_ag$Rs_annual_bahn, var_title = 'Residual plot for when only agriculture data used')
-m_kp_ag <- test_kp_ag[[ 1 ]]
-m1_kp_ag <- test_kp_ag[[ 2 ]]
-intercept_kp_ag <- summary( m_kp_ag )$coefficients[ 1, 4 ]
-slope_kp_ag <- summary( m1_kp_ag )$coefficients[ 2, 4 ]
-intercept_kp_ag
-print(paste('Agriculture alone, p value for slope = ', round(summary( m1_kp_ag )$coefficients[ 2, 4 ],2), sep = ""))
+# figB_kp_ag <- Rs_comparion_figure( srdb_kp_ag, var_title = 'Only data from agriculture used' )
+Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+
 ```
 
 ```{r wetland, warning=FALSE}
 # Take wetland as an example to test
 # Move wetland from srdb -- no big effect
 srdb_mv_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = T )
-figB_mv_wet <- Rs_comparion_figure( srdb_mv_wet, var_title = 'When data from wetland were removed' )
-test_mv_wet <- Rs_annual_bahn_test(srdb_mv_wet, srdb_mv_wet$Rs_annual_bahn, var_title = 'Residual plot when data from wetland were removed')
-m_mv_wet <- test_mv_wet[[ 1 ]]
-m1_mv_wet <- test_mv_wet[[ 2 ]]
-intercept_mv_wet <- summary( m_mv_wet )$coefficients[ 1, 4 ]
-slope_mv_wet <- summary( m1_mv_wet )$coefficients[ 2, 4 ]
-intercept_mv_wet
-slope_mv_wet
+# figB_mv_wet <- Rs_comparion_figure( srdb_mv_wet, var_title = 'When data from wetland were removed' )
+Rs_annual_bahn_test(srdb_mv_wet, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 
 # Wetland alone -- not significant differ
 srdb_kp_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = F )
-figB_kp_wet <- Rs_comparion_figure( srdb_kp_wet, var_title = 'Only data from wetland used' )
-test_kp_wet <- Rs_annual_bahn_test(srdb_kp_wet, srdb_kp_wet$Rs_annual_bahn, var_title = 'Residual plot when only data from wetland were used')
-m_kp_wet <- test_kp_wet[[ 1 ]]
-m1_kp_wet <- test_kp_wet[[ 2 ]]
-intercept_kp_wet <- summary( m_kp_wet )$coefficients[ 1, 4 ]
-slope_kp_wet <- summary( m1_kp_wet )$coefficients[ 2, 4 ]
-intercept_kp_wet
-slope_kp_wet
+# figB_kp_wet <- Rs_comparion_figure( srdb_kp_wet, var_title = 'Only data from wetland used' )
+Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 ```
 
 
@@ -471,27 +397,12 @@ slope_kp_wet
 # IRGA method
 srdb_mv_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = T )
-figB_mv_IRGA <- Rs_comparion_figure( srdb_mv_IRGA, var_title = 'Rs measured by Alkali, soda line and gradient' )
-test_mv_IRGA <- Rs_annual_bahn_test(srdb_mv_IRGA, srdb_mv_IRGA$Rs_annual_bahn, var_title = 'Residual plot for Alkali')
-m_mv_IRGA <- test_mv_IRGA[[ 1 ]]
-m1_mv_IRGA <- test_mv_IRGA[[ 2 ]]
-intercept_mv_IRGA <- summary( m_mv_IRGA )$coefficients[ 1, 4 ]
-slope_mv_IRGA <- summary( m1_mv_IRGA )$coefficients[ 2, 4 ]
-intercept_mv_IRGA
-slope_mv_IRGA
+Rs_annual_bahn_test(srdb_mv_IRGA, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 
 # Alkaline method
 srdb_kp_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = F )
-figB_kp_IRGA <- Rs_comparion_figure( srdb_kp_IRGA, var_title = 'Rs measured by IGRA and Gas Chromatography' )
-test_kp_IRGA <- Rs_annual_bahn_test(srdb_kp_IRGA, srdb_kp_IRGA$Rs_annual_bahn, var_title = 'Residual plot for Rs measured by IGRA and Gas Chromatography')
-m_kp_IRGA <- test_kp_IRGA[[ 1 ]]
-m1_kp_IRGA <- test_kp_IRGA[[ 2 ]]
-intercept_kp_IRGA <- summary( m_kp_IRGA )$coefficients[ 1, 4 ]
-slope_kp_IRGA <- summary( m1_kp_IRGA )$coefficients[ 2, 4 ]
-intercept_kp_IRGA
-slope_kp_IRGA
-
+Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
 
 ```
 
@@ -508,8 +419,8 @@ figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 
 ```{r}
 # subset(srdb_orig, srdb_orig$Biome == 'Arctic') # only one record
-print( summary( lm( Rs_annual_bahn ~ Rs_annual * Biome, data=srdb ) ) )
-p <- ggplot( srdb_orig, aes( Rs_annual, Rs_annual_bahn, color= Biome) )
+print( summary( lm( Rs_annual ~ Rs_annual_bahn * Biome, data=srdb ) ) )
+p <- ggplot( srdb_orig, aes( Rs_annual_bahn, Rs_annual, color= Biome) )
 p <- p + geom_point() + ggtitle( 'Test biome effects' )
 p <- p + geom_smooth( method='lm' )
 p <- p + geom_abline( slope=1, linetype=2 )
@@ -517,7 +428,7 @@ print( p )
 ```
 
 
-```{r, fig.width=5, fig.height = 8}
+```{r, fig.width=4, fig.height = 8}
 # move and keep by Biome
 var_filt <- sort(unique(srdb$Biome)) # only two desert records
 var_filt <- var_filt[c(-1)] # n_arctic = 1
@@ -527,7 +438,7 @@ out <- data.frame()
 for (i in 1:length (var_filt)) {
   # a specific ecosystem removed 
   srdb_mv_filt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = var_filt[i], mk = T )
-  lm_mv <- lm(Rs_annual_bahn ~ Rs_annual  , data = srdb_mv_filt) #unique(srdb_mv_filt$Biome)
+  lm_mv <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_mv_filt) #unique(srdb_mv_filt$Biome)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
   p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_filt ) )$coefficients[ 2, 4 ], 4)
@@ -539,7 +450,7 @@ for (i in 1:length (var_filt)) {
  
   # eco alone  
   srdb_kp_filt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = var_filt[i], mk = F )
-  lm_kp <- lm(Rs_annual_bahn ~ Rs_annual  , data = srdb_kp_filt)
+  lm_kp <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_kp_filt)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
   p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_filt ) )$coefficients[ 2, 4 ], 4)
@@ -585,27 +496,27 @@ print( p_kp )
 ```{r}
 # How much variability is due to inaccuracies in the global TAIR data?
 # Do ecosystems with more-variable climates exhibit different trends?
-climate_variability_test( srdb, var_title_T = 'Test TAIR variability and its effect on Rs_Annual vs. Rs_annual_bahn'
-                          , var_title_P = 'Test precipitation variability and its effect on Rs_Annual vs. Rs_annual_bahn' )
+climate_variability_test( srdb, var_title_T = 'Test TAIR variability'
+                          , var_title_P = 'Test precipitation variability' )
 ```
 
 
 
 ## 4.2.7 Drought effect?
 
-```{r, warning=FALSE}
-climate_MAP_test (srdb, 'Test how MAP affects the relationship between\n Rs_Annual and Rs_annual_bahn')
+```{r, warning=FALSE, fig.width=8}
+climate_MAP_test (srdb, 'Test MAP', 'Residual plot')
 ```
 
-```{r}
+```{r, fig.height=12, fig.width=5}
 # Does drought affects trends?
-SPI_test( srdb, 'Test how SPI affects the relationship between\n Rs_Annual and Rs_annual_bahn' ) #SPI can identify the drout of a year compare to the past 50 years (1964-2014)
+SPI_test( srdb, 'Test SPI' ) #SPI can identify the drout of a year compare to the past 50 years (1964-2014)
 ```
 
 
-```{r}
+```{r, fig.height=12, fig.width=5}
 # Do drought effects different trends?
-PDSI_test( srdb, 'Test how PDSI affects the relationship between\n Rs_Annual and Rs_annual_bahn' ) # need a new SPI data
+PDSI_test( srdb, 'Test PDSI' ) # need a new SPI data
 ```
 
 

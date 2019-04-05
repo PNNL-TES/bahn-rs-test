@@ -101,20 +101,18 @@ Rs_diurnal_bahn <- Rs_diurnal_bahn[!is.na(Rs_diurnal_bahn$Rs_diurnal_bahn), ]
 
 p1 <- qplot(Rs_diurnal_mean, Rs_diurnal_bahn, data = Rs_diurnal_bahn) + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red", size = 1.5) + 
-  theme_bw() +
   geom_smooth(method = "lm") + 
   xlab (expression ("Measured diurnal Rs (g C m"^-2 * " d"^-1* ")") ) +
   ylab (expression ("Predicted diurnal Rs by Bahn (g C m"^-2 * " d"^-1* ")") )
 
 p2 <- qplot(Rs_diurnal_mean, Rs_Ts_mean,  data = Rs_diurnal_bahn) + 
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red", size = 1.5) + 
-  theme_bw() +
   geom_smooth(method = "lm") + 
   xlab (expression ("Measured diurnal Rs (g C m"^-2 * " d"^-1* ")") ) +
   ylab (expression ("Rs when reach diurnal Ts (g C m"^-2 * " d"^-1* ")") )
 
 # histgram of time_label
-p3 <- qplot(Time_label, geom="histogram", data = Rs_diurnal_bahn, bins = 48)  + theme_bw() +
+p3 <- qplot(Time_label, geom="histogram", data = Rs_diurnal_bahn, bins = 48)  + 
   xlab (expression ("Time period reach diurnal mean Ts (" * degree~C * ")") ) +
   ylab ('Frequency (n)')
 
