@@ -53,7 +53,6 @@ Papers/
 *_cache/
 *_files/
 *.html
-*.png
 
 # Exclude old 
 old/
