@@ -104,8 +104,8 @@ filtration_mk <- function( srdb, fil_type = F, var=F, mk=T ) {
                 "TAnnual_Del", "TAIR_SD", 
                 "PAnnual_Del", "PRECIP_SD", 
                 # "TAIR_LTM", "PRECIP_LTM", 
-                "SPI",
-                "mtr_out", "Rs_TAIR_units", "Rs_TAIR", "Rs_annual_bahn", "TAIR_dev", "TAIR_LTM_dev"
+                "SPI", "pdsi_pm_mean",
+                "mtr_out", "Rs_TAIR_units", "Rs_TAIR", "Rs_annual_bahn", "TAIR_dev", "TAIR_LTM_dev", "Rs_TAIR_TAnnual"
   )
   
   srdb <- srdb_orig[ fields ]	
@@ -178,19 +178,6 @@ filtration4 <- function( srdb, pdiff_max=50, quiet=F ) {
 # III. Method functions
 # ****************************************************************************************************
 
-# Function 3.1: Climate space figure
-# colnames(srdb)
-climate_Del_test <- function () {
-  sdata <- srdb
-  p1 <- qplot( MAT_Del, MAT,  data=sdata ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
-  p2 <- qplot( TAnnual_Del, Study_temp, data=sdata ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
-  p3 <- qplot( MAP_Del, MAP, data=sdata ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
-  p4 <- qplot( PAnnual_Del, Study_precip, data=sdata ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
-  
-  print (plot_grid (p1, p2, p3, p4, ncol = 2, nrow = 2, labels = c("( a )", '( b )', '( c )', '( d )'), vjust = 2.0, hjust = -2.0 ) )
-  invisible(list(p1,p2,p3,p4))
-}
-
 
 climate_figure <- function( srdb, name="" ) {
   sdata <- srdb
@@ -201,7 +188,8 @@ climate_figure <- function( srdb, name="" ) {
   p <- p + xlab( expression( MAT~group("(",paste(degree,C),")")  ) ) + ylab( "MAP (mm)" )
   #p <- p + geom_point( data=sdata, aes( x=5, y=750, color=Biome ) )
   p <- p + geom_jitter( data=sdata, aes( x=MAT_Del, y=MAP_Del, color=Ecosystem_type ) ) #, show_guide=F )
-  p <- p + guides( fill=F ) + ggtitle("Global MAP/MAT and sample covered MAT/MAP")
+  p <- p + guides( fill=F ) + ggtitle("Rs samples covered MAT/MAP") +
+    theme(legend.position = c(0.25, 0.65), legend.background = element_rect(fill = alpha('white', 0), size = 0.75))
   print( p )
   invisible( p )
 }
@@ -217,8 +205,8 @@ compare_Rs_annual_Rs_TAIR <- function( sdata, name="" ) {
   p <- p <- qplot(Rs_TAIR, Rs_annual, data=sdata )
   p <- p + geom_smooth(method = 'lm') + geom_abline(linetype = 2) +
     ggtitle("Rs_Annual vs. Rs_MAT") + 
-    ylab(expression("Rs_MAT (g C m"^2 * "yr" ^-1 * ")"))+
-    xlab(expression("Rs_Annual (g C m"^2 * "yr" ^-1 * ")"))
+    ylab(expression("Rs_annual (g C m"^2 * "yr" ^-1 * ")"))+
+    xlab(expression("Rs_mast (g C m"^2 * "yr" ^-1 * ")"))
   print(p)
   p_inter <- round(summary( m )$coefficients[ 1, 4 ], 4)
   
@@ -243,17 +231,18 @@ compare_Rs_annual_Rs_TAIR <- function( sdata, name="" ) {
 # -----------------------------------------------------------------------------
 # Function 3.3: whether different TS source have effect
 TS_Source_test <- function( sdata ) { 
-  sdata$TS_Source2 <- 
+  sdata$Ts_Source <- 
     ifelse( sdata$TS_Source == 'Rs_Ts_Relationship', "Rs Ts Relationship"
             , ifelse(sdata$TS_Source == 'MGRsD', "From MGRsD",
                      ifelse(grepl("TAIR_Del", sdata$TS_Source, fixed = TRUE), 'Partly from TAIR', "From Paper" ) )  )
   
-  p <- qplot(Rs_annual_bahn, Rs_annual, data=sdata, color=TS_Source2 ) +
-    ggtitle("Rs_Annual vs. Rs_annual_bahn by different Ts sources")
+  p <- qplot(Rs_annual_bahn, Rs_annual, data=sdata, color=Ts_Source ) +
+    ggtitle("Rs_Annual vs. Rs_annual_bahn by different Ts sources") 
   
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) +
     xlab (expression ("Rs_annual_bahn (g C m"^-2*"yr"^-1* ")")) +
-    ylab (expression ("Rs_Annual Rs (g C m"^-2*"yr"^-1* ")"))
+    ylab (expression ("Rs_Annual Rs (g C m"^-2*"yr"^-1* ")")) +
+    scale_fill_discrete("Ts source")
       
   print( p )
   
@@ -268,7 +257,7 @@ TS_Source_test <- function( sdata ) {
   p_slope <- 2*pt(t_slope, m$df, lower=FALSE)
   print( paste0('t_slope = ', round(t_slope, 3), ', p_slope = ', p_slope) )
   
-  print( summary( lm( Rs_annual ~ Rs_annual_bahn * TS_Source2, data=sdata ) ) )
+  print( summary( lm( Rs_annual ~ Rs_annual_bahn * Ts_Source, data=sdata ) ) )
   
 }
 
@@ -365,16 +354,80 @@ Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F, var_title, res_t
   
   printlog( "Plotting and saving model residuals..." )
   sdata$standardized_resids <- rstandard( m )
-  p1 <- ggplot( sdata, aes( Rs_annual, standardized_resids )  )  +
+  p1 <- ggplot( sdata, aes( Rs_bahn, standardized_resids )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
-    xlab( expression( Measured~R[Sannual]~(g~C~m^{-2}~yr^{-1}) ) ) +
+    xlab( expression( Fitted~R[Sannual]~(g~C~m^{-2}~yr^{-1}) ) ) +
     ggtitle (res_title)
   
-  p1 <- p1 + geom_point(  ) + geom_smooth( method='lm' ) +  ylim(-5, 8)
+  p1 <- p1 + geom_point( col=alpha('black', 0.5) ) + ylim(-5, 8) + geom_smooth( method='lm' )
   # ggarrange(p, p1, ncol = 2) 
   print( plot_grid(p, p1, labels = c("( a )", "( b )"), vjust = 4, hjust = c(-2.5,-2) ) )
   
-  par( mfrow=c( 2, 2 ) )
+  par( mar=c(3, 2, 2, 1)
+       , mai=c(0.5, 0.5, 0.1, 0.1)  # by inches, inner margin
+       , omi = c(0.3, 0.4, 0.1, 0.1)  # by inches, outer margin 
+       , mgp = c(1.1, 0.2, 0) # set distance of axis
+       , tcl = 0.4
+       , cex.axis = 1
+       , mfrow=c(2,2))
+  plot( m, labels.id=paste( sdata$Record_number, sdata$Author ) )
+  
+  # Test if slope=1
+  #library( smatr )		# can also use summary(lm(y-1*x~x))
+  #print( slope.test( sdata$Rs_annual_bahn, sdata$Rs_annual, method="OLS" )$p )
+  print(paste0(SEPARATOR, 'Test whether intercept differ from 1'))
+  t_slope <- abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2])
+  p_slope <- round( 2*pt(t_slope, m$df, lower=FALSE), 5 )
+  print( paste0('t_slope = ', round(t_slope, 3), ', p_slope = ', p_slope, ', df = ', m$df ) )
+  
+  invisible(list( m, p, p1 ) )
+}
+
+
+
+# -----------------------------------------------------------------------------
+# Function 4.2: Test outlier
+
+Outlier_test <- function( sdata, temp, name="", quiet=F, var_title, res_title ) {
+  printlog( SEPARATOR )
+  printlog( "How are Rs_annual and Rs_annual_bahn_Temp related?" )
+  printdims( sdata )
+  
+  Rs_bahn <- sdata[, colnames(sdata)==temp]
+  p <- ggplot( sdata, aes( Rs_bahn, Rs_annual ) )
+  # need figure out calculate geom_errorbarh
+  p <- p + geom_errorbarh( aes( xmin=Rs_annual-Rs_annual_err, xmax=Rs_annual+Rs_annual_err), alpha=0.5 )
+  p <- p + geom_point( alpha=0.5 )
+  p <- p + geom_smooth( method='lm', color='black' )
+  p <- p + geom_abline( slope=1, linetype=2 )
+  p <- p + ylab( expression( Measured~R[Sannual]~(g~C~m^{-2}~yr^{-1}) ) )
+  p <- p + xlab( expression( R[Sannual]~bahn~(g~C~m^{-2}~yr^{-1}) ) ) +
+    ggtitle (var_title)
+  
+  m <- lm( Rs_annual ~ Rs_bahn, data=sdata )
+  print( summary( m ) )
+    
+  printlog( SEPARATOR )  
+  printlog( "Plotting and saving model diagnostics..." )
+  
+  printlog( "Plotting and saving model residuals..." )
+  sdata$standardized_resids <- rstandard( m )
+  p1 <- ggplot( sdata, aes( Rs_bahn, standardized_resids )  )  +
+    ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
+    xlab( expression( Fitted~R[Sannual]~(g~C~m^{-2}~yr^{-1}) ) ) +
+    ggtitle (res_title)
+  
+  p1 <- p1 + geom_point( col=alpha('black', 0.5) ) + ylim(-5, 8) + geom_smooth( method='lm' )
+  # ggarrange(p, p1, ncol = 2) 
+  print( plot_grid(p, p1, labels = c("( a )", "( b )"), vjust = 4, hjust = c(-2.5,-2) ) )
+  
+  par( mar=c(3, 2, 2, 1)
+       , mai=c(0.5, 0.5, 0.1, 0.1)  # by inches, inner margin
+       , omi = c(0.3, 0.4, 0.1, 0.1)  # by inches, outer margin 
+       , mgp = c(1.1, 0.2, 0) # set distance of axis
+       , tcl = 0.4
+       , cex.axis = 1
+       , mfrow=c(2,2))
   plot( m, labels.id=paste( sdata$Record_number, sdata$Author ) )
   
   # Test if slope=1
@@ -414,12 +467,12 @@ Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F, var_title, res_t
       ggtitle (var_title)
     
     sdata$standardized_resids <- rstandard( m )
-    p1 <- ggplot( sdata, aes( Rs_annual, standardized_resids )  )  +
+    p1 <- ggplot( sdata, aes( Rs_bahn, standardized_resids )  )  +
       ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
       xlab( expression( Measured~R[Sannual]~(g~C~m^{-2}~yr^{-1}) ) ) +
       ggtitle (res_title)
     
-    p1 <- p1 + geom_point(  ) + geom_smooth( method='lm' ) +  ylim(-5, 8)
+    p1 <- p1 + geom_point( col = alpha('black', 0.5) ) + geom_smooth( method='lm' ) +  ylim(-5, 8)
     # ggarrange(p, p1, ncol = 2) 
     print( plot_grid(p, p1, labels = c("( c )", "( d )"), vjust = 4, hjust = c(-2.5,-2) ) )
     
@@ -439,7 +492,6 @@ Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F, var_title, res_t
   
   invisible(list( m, p, p1 ) )
 }
-
 # Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F, var_title ) {
 #   
 #   printlog( SEPARATOR )
@@ -521,6 +573,20 @@ RC_test <- function( sdata, var_title ) {
 # Function 4.2.6: How much of the inaccuracy in the Rs_annual~Rs_annual_bahn relationship
 # is due to inaccuracies in the air temperature dataset?
 
+# Function: Climate space figure
+# colnames(srdb)
+climate_Del_test <- function () {
+  sdata <- srdb
+  p1 <- qplot( MAT_Del, MAT,  data=sdata ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
+  p2 <- qplot( TAnnual_Del, Study_temp, data=sdata ) + geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
+  p3 <- qplot( MAP_Del, MAP, data=sdata ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' ) 
+  p4 <- qplot( PAnnual_Del, Study_precip, data=sdata ) +  geom_abline( slope=1, linetype = "dotdash", size = 1.5, col = "red") + geom_smooth( method='lm' )
+  
+  print (plot_grid (p1, p2, p3, p4, ncol = 2, nrow = 2, labels = c("( a )", '( b )', '( c )', '( d )'), vjust = 2.0, hjust = -2.0 ) )
+  invisible(list(p1,p2,p3,p4))
+}
+
+# Function test variability
 climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
   printlog( SEPARATOR )
   printlog( "How does climate variability affect this relationship?" )
@@ -530,7 +596,9 @@ climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
   p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=TAIR_SD2 )
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
   p <- p + scale_color_discrete( "Monthly tair\nvariability" ) + 
-    ggtitle(var_title_T) + theme(legend.position = 'bottom')
+    ggtitle(var_title_T) + 
+    theme(legend.position = c(0.75, 0.2), legend.background = element_rect(colour = 'transparent', fill = alpha('white', 0), size = 0.75) ) 
+    
   # print( p )
   # saveplot(outputDir = OUTPUT_DIR, pname = "4.2.6_var_effect_tair" )	
   
@@ -540,7 +608,8 @@ climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
   p2 <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=PRECIP_SD2 )
   p2 <- p2 + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
   p2 <- p2 + scale_color_discrete( "Monthly precip\nvariability" ) + 
-    ggtitle (var_title_P) + theme(legend.position = 'bottom')
+    ggtitle (var_title_P) + 
+    theme(legend.position = c(0.75, 0.2), legend.background = element_rect(colour = 'transparent', fill = alpha('white',0), size = 0.75))
   # print( p2 )
  	print(plot_grid(p, p2, ncol = 2, labels = c('( a )', '( b )'), vjust = 4, hjust = c(-2.25, -2.25) ) )
  	
@@ -558,7 +627,7 @@ climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
 # max(srdb_orig$MAP_Del, na.rm = T)
 climate_MAP_test <- function( sdata, var_title, res_title ) {
   sdata$MAP_Del2 <- cut( sdata$MAP_Del, 10 )
-  m <- lm( Rs_annual~Rs_annual_bahn, data=sdata )
+  m <- lm( Rs_annual ~ Rs_annual_bahn*MAP_Del, data=sdata )
   print( summary( m ) )
   sdata$standardized_resids <- rstandard( m )
   p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=MAP_Del2 ) + theme(legend.position = "none")
@@ -584,9 +653,11 @@ SPI_test <- function( sdata, var_title ) {
   m <- lm( Rs_annual ~ Rs_annual_bahn, data=sdata )
   print( summary( m ) )
   sdata$standardized_resids <- rstandard( m )
-  p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=SPI2 ) + theme(legend.position = "none")
+  p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=SPI2 ) + 
+    theme(legend.position = c(0.85,0.3), legend.title = element_blank()
+          , legend.background = element_rect(colour = 'transparent', fill = alpha('white',0), size = 0.75))
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-  p <- p + scale_color_discrete( "MAP" ) + ggtitle (var_title)
+  p <- p + scale_color_discrete( "SPI" ) + ggtitle (var_title)
   
   p1 <- ggplot( sdata, aes( SPI, standardized_resids )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
@@ -620,9 +691,11 @@ PDSI_test <- function( sdata, var_title ) {
   print( summary( m ) )
   
   sdata$standardized_resids <- rstandard( m )
-  p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=PDSI2 ) + theme(legend.position = "none")
+  p <- qplot( Rs_annual_bahn, Rs_annual, data=sdata, color=PDSI2 ) + 
+    theme(legend.position = c(0.85,0.3), legend.title = element_blank()
+          , legend.background = element_rect(fill = alpha('white',0), colour = 'transparent', size = 0.75))
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-  p <- p + scale_color_discrete( "MAP" ) + ggtitle (var_title)
+  p <- p + scale_color_discrete( "PDSI" ) + ggtitle (var_title)
   
   p1 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
@@ -646,9 +719,60 @@ PDSI_test <- function( sdata, var_title ) {
   invisible (list(m, m2, p, p1, p2))
 }
 
+# ****************************************************************************************************
+#  V. New modeling, same pormat as Bahn but with updated parameters
+# ****************************************************************************************************
+
+bahn_vs_new <- function( sdata, temp, name="", quiet=F, var_title, res_title ) {
+  printlog( SEPARATOR )
+  printlog( "How are Rs_annual and Rs_annual_bahn_Temp related?" )
+  printdims( sdata )
+  
+  Rs_bahn <- sdata[, colnames(sdata)==temp]
+  p <- ggplot( sdata, aes( Rs_bahn, Rs_annual ) )
+  # need figure out calculate geom_errorbarh
+  p <- p + geom_errorbarh( aes( xmin=Rs_annual-Rs_annual_err, xmax=Rs_annual+Rs_annual_err), alpha=0.5 )
+  p <- p + geom_point( alpha=0.5 )
+  p <- p + geom_smooth( method='lm', color='black' )
+  p <- p + geom_abline( slope=1, linetype=2 )
+  p <- p + ylab( expression( R[Sannual] ) )
+  p <- p + xlab( expression( R[Sannual]~bahn ) ) +
+    ggtitle (var_title)
+  
+  m <- lm( Rs_annual ~ Rs_bahn, data=sdata )
+  print( summary( m ) )
+  
+  # method 2: this test slope differ from 1
+  print(paste0('second method', SEPARATOR, 'test whether intercept differ from 1'))
+  t_slope <- abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2])
+  p_slope <- 2*pt(t_slope, m$df, lower=FALSE)
+  print( paste0('t_slope = ', round(t_slope, 3), ', p_slope = ', p_slope) )
+  
+  printlog( "Plotting and saving model diagnostics..." )
+  printlog( "Plotting and saving model residuals..." )
+  
+  sdata$standardized_resids <- rstandard( m )
+  p1 <- ggplot( sdata, aes( SPI, standardized_resids )  )  +
+    # ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
+    ylab( expression( Standardized~residual ) ) +
+    xlab( expression( SPI ) ) +
+    ggtitle (res_title) + geom_point( col=alpha('black', 0.5) ) + ylim(-5, 8) + geom_smooth( method='lm' )
+  
+  p2 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids )  )  +
+    ylab( expression( Standardized~residual ) ) + 
+    xlab( expression( PDSI ) ) +
+    ggtitle (res_title) + geom_point( col=alpha('black', 0.5) ) + ylim(-5, 8) + geom_smooth( method='lm' )
+  # ggarrange(p, p1, ncol = 2) 
+   bahn_vs_new <- plot_grid(p, p1, p2, ncol = 3)
+   
+   return(bahn_vs_new)
+  
+  invisible(list( m, p, p1, p2 ) )
+}
+
 
 # ****************************************************************************************************
-#  V. New add functions, not used yet
+#  VI. New add functions, not used yet
 # ****************************************************************************************************
 # Function 5.1: plot data
 

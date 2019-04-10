@@ -1,17 +1,17 @@
 ---
-title: "Can soil respiration measured at MAT represent annual soil respiration?"
+title: "Predicting annual soil respiration from its flux at mean annual temperature"
 author: "Jinshi"
 date: "March 26, 2019"
 output:
-  html_document: default
-  pdf_document: default
   word_document: default
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r preliminaries, message=FALSE, include=FALSE, echo=FALSE}
 # Set chunks defaults; these options will be applied to all subsequent chunks
 knitr::opts_chunk$set(results = 'hide', message = TRUE, include = TRUE, echo = FALSE,
-                      fig.height = 5, fig.width = 7)
+                      fig.height = 4.5, fig.width = 8)
 
 # Constants
 OUTPUT_DIR		<- "outputs/"
@@ -55,6 +55,8 @@ source('2.0-bahn_processing.R')
 # Load data
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
 srdb_orig <- read.csv( INFN, stringsAsFactors=F )
+srdb_orig[is.na(srdb_orig$MAP_Del), 'MAP_Del'] <- srdb_orig[is.na(srdb_orig$MAP_Del), 'MAP']
+
 srdb_orig$TAIR_LTM_dev <- with( srdb_orig, abs( MAT_Del - MAT ) )
 srdb_orig$TAIR_dev <- with( srdb_orig, abs( TAnnual_Del - Study_temp ) )
 conversions <- read.csv( paste( "srdb-conversions.csv", sep="/" ), stringsAsFactors=F )
@@ -68,14 +70,40 @@ srdb_orig[is.na(srdb_orig$MAT_Del), colnames(srdb_orig)=='MAT_Del'] <-
   srdb_orig[is.na(srdb_orig$MAT_Del), colnames(srdb_orig)=='MAT']
 
 # Using TAnnual predict Rs_MAT
-srdb_orig <- compute_rs_mat( srdb_orig, "TAnnual_Del")
+srdb_orig <- compute_rs_new2( srdb_orig, "TAnnual_Del")
 colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_TAnnual", "Rs_TAIR_units_TAnnual", "Rs_TAIR_TAnnual", "Rs_annual_bahn_TAnnual")
 
+# Adjust T_Annual by 2.918 + 0.928*T_Annual
+srdb_orig$TAnnual_Del_adj <- 2.918+srdb_orig$TAnnual_Del*0.829
+srdb_orig <- compute_rs_new2( srdb_orig, "TAnnual_Del_adj")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_TAnnual_adj", "Rs_TAIR_units_TAnnual_adj", "Rs_TAIR_TAnnual_adj", "Rs_annual_bahn_TAnnual_adj")
+
+# Re-simulate Rs_annual ~ Rs_maat relationship
+srdb_orig <- compute_rs_maat( srdb_orig, "TAnnual_Del")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_TAnnual_maat", "Rs_TAIR_units_TAnnual_maat", "Rs_TAIR_TAnnual_maat", "Rs_annual_bahn_TAnnual_maat")
+
 # Using MAT predict Rs_MAT
-srdb_orig <- compute_rs_mat( srdb_orig, "MAT_Del")
+srdb_orig <- compute_rs_new2( srdb_orig, "MAT_Del")
 colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_MAT", "Rs_TAIR_units_MAT", "Rs_TAIR_MAT", "Rs_annual_bahn_MAT")
 
-# Using mean annual soil temperature predict Rs_MAT
+# Adjust MAP_Del by 2.918 + 0.928*MAT_Del
+srdb_orig$MAT_Del_adj <- 2.918+srdb_orig$MAT_Del*0.829
+srdb_orig <- compute_rs_new2( srdb_orig, "MAT_Del_adj")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_MAT_adj", "Rs_TAIR_units_MAT_adj", "Rs_TAIR_MAT_adj", "Rs_annual_bahn_MAT_adj")
+
+# Re-simulate Rs_annual ~ Rs_maat relationship
+srdb_orig <- compute_rs_maat( srdb_orig, "MAT_Del")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_MAT_maat", "Rs_TAIR_units_MAT_maat", "Rs_TAIR_MAT_maat", "Rs_annual_bahn_MAT_maat")
+
+# Using Ts predict Rs_MAT, with new model1
+srdb_orig <- compute_rs_new1( srdb_orig, "Study_TS_Annual")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_new1", "Rs_TAIR_units_new1", "Rs_TAIR_new1", "Rs_annual_bahn_new1")
+
+# Using Ts predict Rs_MAT, with new model2
+srdb_orig <- compute_rs_new2( srdb_orig, "Study_TS_Annual")
+colnames(srdb_orig)[(length(colnames(srdb_orig))-3):length(colnames(srdb_orig))] <- c("mtr_out_new2", "Rs_TAIR_units_new2", "Rs_TAIR_new2", "Rs_annual_bahn_new2")
+
+# Using mean annual soil temperature predict Rs_MAT (model from bahn)
 srdb_orig <- compute_rs_mat( srdb_orig, "Study_TS_Annual")
 
 srdb_orig <- srdb_orig[!is.na(srdb_orig$Rs_annual_bahn),]
@@ -83,42 +111,30 @@ srdb <- srdb_orig
 # srdb_orig <- srdb
 ```
 
+# Introduction
 
-# 1. The spatial distribution of global Rs sites 
+* In daily and monthly time scale, it is very common using Rs measured at mean annual soil temperature (Rs_mast) to represent daily Rs and monthly Rs (Rs_annual), in another word, we measure once per day or once per month, and use the Rs rate measured to represent daily Rs and monthly Rs rate.
+* Based on a global hourly soil respiration database (HGRsD), we examed the relationship between Rs measured at daily mean soil temperature and the average of 24 hours continues measured Rs, the results shows that soil respiration measured at daily mean soil temperature match well with daily mean Rs (slope=1, and intercept=0).
 
-* In daily and monthly time scale, we used this approach a lot
 ```{r}
 Rs_mat_Rs_diurnal()
 ```
 
-
-* We have much more measurements Rs in mid-latitude regions, where developed countries are mostly located
-* It is difficult to measure soil respiration all year around in cold regions, but critical because of high rates of climate change and large soil C stocks
-* Less-developed countries are constrained by lack of resources, and thus we do not have enough measurements from tropical regions [(Xu and Shang 2016)](http://dx.doi.org/10.1016/j.jplph.2016.08.007)
-
-![Global spatial distribution of soil respiration sites](SI/1. SRDB_V4_Fig1.png)
-
-Rs data from cold regions are more important, but how to increase the number of measurements?
-* Make equipment work normally in very cold and remote conditions
-* Increase resources devoted to Rs measurements
-* Methodological improvements: for instance, measuring once per day to get daily mean
-
+* However, due to the non-linear relationship between Rs and temperature, in annual time-scale, soil respiration at mean temperature cannot directly represent annual soil respiration.
 ![Rs measured at diurnal soil temperature](SI/2. Jessens.png)
 
-* Measure once per year to get annual Rs mean? This is **Bahn's approach** [Bahn et al. (2004) Biogeosciences](http://dx.doi.org/10.5194/bg-7-2147-2010)
+* Even though, Bahn et al. (2010) found that Rs measured at mean temperature have a clear relationship with Rs_annual, based on 80 sites across global, Bahn et al. developed a exponential model to predict Rs_annual through Rs_mat (no drought stress sites: Rs_annual = 455.8 Rs_mast^1.0054, with drought stress sites:Rs_annual = 436.2 Rs_mast^0.926).
+
+* Citation: **Bahn's approach** [Bahn et al. (2004) Biogeosciences](http://dx.doi.org/10.5194/bg-7-2147-2010)
 
 ![Rs measured at mean annual soil temperature](SI/3. Rs_MAT_Rs_Annual_Bahn2010.jpeg)
 
-* Rs measured at annual mean temperature is ~~linearly~~ related with annual Rs rate
-* Rs at mean temperature: soil respiration measured at annual mean temperature, monthly mean temperature, and/or daily mean temperature
-* `Rs_annual` ~ `Rs_mat` ("Rs_bahn")
-* `Rs_annual` = 455.8 * `Rs_mat`^1.0054 (R^2^ = 0.94, p<0.001)
 
-# 2. The objects of this analysis are
-* Examine whether Rs measured at annual mean soil temperature can represent annual Rs rate? (We now have an order of magnitude more data than Bahn et al.)
-* Annual mean air temperature (e.g., average of 12 monthes' air temperature of 2000) / Mean annual air temperature (1964-2014)
-* If not, when and what is the mechanism?
-* Update the model?
+# The objects of this analysis are
+* Examine whether Rs_mat can represent annual Rs rate using data from SRDB_V4, we have 823 records, an order of magnitude more data than Bahn et al.)
+* Since long term and high spatial resolution soil temperature is still lacking, we tend to test whether Rs measured at annual mean air temperature (Rs_amat), or mean air temperature across 1964-2014 (mat) well predict Rs_annual.
+* If current Bahn et al. (2010) not well predict Rs_annual based on Rs_mast, we want to diagnose when and why this approach is not working?
+* Finally, to update Bahn et al. (2010)'s model.
 
 # 3. Methods
 
@@ -130,12 +146,6 @@ Rs data from cold regions are more important, but how to increase the number of 
 * Air temperature (University of Daleware global precipitation and air temperature data, 1964-2014, half degree spatial resolusion)
 * 823 records from 253 studies
 
-```{r 3.1.1 MAP from Delaware vs MAP from paper, warning = FALSE}
-
-climate_Del_test()
-
-```
-
 
 **Statistics**
 
@@ -146,33 +156,52 @@ climate_Del_test()
 **Update Bahn's model**
 
 * If Bahn (2010) model does not predict Rs_annual in all conditions
-* Update Bahn (2010) model (e.g., including drought parameter, other parameters?)
-* Regression tree modeling?
+* Update Bahn (2010) model (new_model1: only update parameters, but same model formate as Bahn et al. (2010), new_model2: add some other parameters to the model?)
 
 
-```{r 3.1.2 Coverage of MAP and MAT, message=FALSE, warning=FALSE}
+```{r 3.1.2 Coverage of MAP and MAT, message=FALSE, warning=FALSE, fig.width=4, fig.height=4}
 figA <- climate_figure( srdb_orig )
 ```
 
 
-## 3.2 test the relationship between Rs_annual and Rs_mat
-```{r 3.2 Rs_annual vs Rs_mat, results='show'}
+<!-- * As we expected, Rs_mast cannot directly used to represent Rs_annual (slope = 0.94, p<0.001, intercept = 160, p < 0.001). -->
+```{r, results='show'}
+# 3.2 Rs_annual vs Rs_mat, test the relationship between Rs_annual and Rs_mat
 # Report updated values for Bahn (2010) relationship based on SRDB
-compare_Rs_annual_Rs_TAIR( srdb_orig )
-
+# compare_Rs_annual_Rs_TAIR( srdb_orig )
 # test intercept
+```
 
+* Based on annual mean soil temperature (amst) and relationship between Rs_annual and Ts, we estimated Rs rate at annual mean soil temperature:Rs_amst
+* We thus applied Bahn et al. (2010) model to predict annual soil respiration (Rs_annual_bahn), and compare Rs_annual_bahn vs Rs-annual to see whether Bahn et al. (2010)'s model can well predict Rs_annual based on Rs_mast.
+* The results show that Rs_annual_bahn do not well represent Rs_annual (slope=0.75, p<0.001, intercept=164, p<0.001).
+* The residuals have a clear trend with standardized precipitation index change (SPI, a drought index, the smaller, the drier) and Palmer Drought Severity Index (PDSI, the smaller, the drier) increase.
+
+```{r, fig.height=3.5, fig.width=9}
+print(bahn_vs_new (srdb_orig, 'Rs_annual_bahn', var_title = 'Bahn (2010)', res_title = 'Residual plot')) 
 ```
 
 
-## 3.3 Ts sources (MGRsD, MGRsD_TAIR, From paper, Rs_Ts_relationship)
+## 3.4.1 Ts sources (MGRsD, MGRsD_TAIR, From paper, Rs_Ts_relationship)
+* We thus exhaustively examed the possibilities cause the Rs_annual_bahn vs Rs_annual not following 1:1 line.
+
+* At first, we tested the soil temperature sources and its effect on the Rs_annual_bahn vs Rs_annual. The results show that Ts sources do not have clear effects on the Rs_annual_bahn and Rs_annual relationship.
+* **From MGRsD** means mean annual soil temperature (amst) are from a global monthly soil respiration database, each site has more than 12 months measured soil temperature read from original papers.
+* **From paper** means amst were reported from the original paper (table, figures, or description).
+* **Partly from TAIR** means: some studies did not measure soil temperature all year aroud, for those months, we predic soil temperature based on monthly air temperature (Tsoil = 2.918 + 0.829*Tair, this model was developed based on the sites which have >= 12 months soil temperature measurements).
+* **Rs_Ts_relationship**: there are 67 records I cannot get the soil temperature information through above three methods. Based on the Rs_Ts_relationship and reported Rs_annual, I calculated the amst.
+* The calculated amst was then compared with the annual Tair, if they are well matched (error < 5%), calculated mast were used. 
+* Calculated amst and annual Tair not well match usually indicate a potential problem, then I go back to the manuscript and check out what is the problem.
+* Whenever a paper reported annual mean Ts, I compared the reported mast and estimated mast based on the Rs_Ts_relationship, I found they are well matched. 
+
 
 ```{r 3.3 Ts sources and effect}
 # Does TS source afffects result, function 3.2
 fig_Ts <- TS_Source_test(srdb)
 ```
 
-## 3.4 Annual Rs or Ts coverage effect
+## 3.4.2 Annual Rs or Ts coverage effect
+* Secondly, we tested whether Ts and Rs coverage (e.g., 0-0.5 means Rs or Ts only measured less than 6 months), the results show that Ts and Rs coverage do not have significant effect on the Rs_annual_bahn vs Rs_annual relationship.
 
 ```{r 3.4.0 Rs or Ts coverage and effect}
 # What's the effect of annual coverage?
@@ -182,115 +211,110 @@ plot_grid(AC_test( srdb, srdb$Annual_TS_Coverage, var_title = 'Test Ts coverage'
 
 ```
 
-## 3.4.1 Test whether outliers affect the regression (need update)
-* Conclusion: need to update the code and results 
-# moved to section 4.1
 
+## 3.4.3 Effect of maximum allowed divergence between global climate data set and site-specific air temperature
 
-## 3.4.2 Effect of maximum allowed divergence between global climate data set and site-specific air temperature
+* Thirdly, we tested whether maximum allowed divergence between global climate data set and site-specific air temperature affect the Rs_annual_bahn vs Rs_annual relationship.
+* As we throw out data points with high divergence, R2 and RSE goes up and down, suggesting that the Tair divergence do not have great effects.
+* TAIR_dev = with( srdb, abs( TAnnual_Del - Study_Temp ) )
 
-* Does TAIR_dev and TAIR_LT<_dev affect the relationship -- YES!!!!!
-* TAIR_LTM_dev = with( srdb, abs( MAT_Del - MAT ) )
-* Does TAIR_LTM_dev () pull the slope off 1? -- YES!!!!!
-* TAIR_dev <- with( srdb, abs( TAnnual_Del - Study_temp ) )
-* Figure E. Effect of maximum allowed divergence between global climate data set and site-specific air temperature, when given. As we throw out data points with high divergence, R2 goes up (top panel) and RSE goes down (bottom, g C m-2 yr-1).
-
-
-```{r 3.4.2 test divergence, fig.height= 8, fig.width=4}
+```{r 3.4.2 test divergence, fig.height= 4, fig.width=8}
 results <- data.frame()
 for( i in c( 6, 4, 2, 1, 0.5, 0.25 ) ) {
   dat <- filtration3( srdb_orig, i, quiet=T )
   m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  tdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
-                           p_inter <- round(summary(m)$coefficients[1,4],4),
                            slope <- round(summary( m )$coefficients[2,1],4),
+                           R2 = round(summary( m )$adj.r.squared,2),
+                           
+                           p_inter <- round(summary(m)$coefficients[1,4],4),
                            p_slope <- round(summary(lm( Rs_annual_bahn - 1*Rs_annual ~ Rs_annual
                                                         , data = dat ))$coefficients[2,4],4),
-                           R2 = round(summary( m )$adj.r.squared,2), 
                            RSE = round(summary( m )$sigma,2 ),
                            n <- length(dat[,1])
                            ) ) 
 }
 
 printlog( SEPARATOR )
-colnames(results) <- c("TAIR_LTM_dev", 'intercept', "p(intercept)", 'slope', "p(slope)", 'R2', 'MSE', 'n')
+colnames(results) <- c("TAIR_LTM_dev", 'intercept', 'slope','R2', "p_inter", "p_slope", 'MSE', 'n')
 print( results )
 results <- results[, 1:7]
 d <- melt( results, id.vars=1 )
 p <- qplot( TAIR_LTM_dev, value, data=d, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
-  xlab( expression('Absolute diff between TAIR_Del and temp from paper (' * degree~C * ")") ) + 
-  ggtitle ('Test effects of temperature difference between paper \nreported TAIR and TAIR from Delaware climate data')
+  facet_wrap(~variable, scales = "free", nrow = 2 ) + 
+  xlab( expression('Abs diff TAIR (' * degree~C * ")") ) + 
+  ggtitle ('Test effects of temperature difference between paper \nand from Delaware climate data')
 print( p )
 ```
 
 
 
-## 3.4.3 Effect of maximum allowed divergence between annual precipitation from paper and Del
+## 3.4.4 Effect of maximum allowed divergence between annual precipitation from paper and Del
 
-```{r 3.4.3 test precipitation divergence, fig.height=8, fig.width=4}
+* Fourth, we also tested whether maximum allowed divergence between global climate data set and site-specific precipitation affect the Rs_annual_bahn vs Rs_annual relationship.
+* As we throw out data points with high divergence, R2 and RSE show no big changes, suggesting that the precipitation divergence do not have great effects.
+* TAIR_dev = with( srdb, abs( PAnnual_Del - Study_Precip ) )
+
+```{r 3.4.3 test precipitation divergence, fig.height=4, fig.width=8}
 results <- data.frame()
 for( i in c( seq(50, 3000, 200) ) ) {
   dat <- filtration4( srdb_orig, i, quiet=T )
   m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  pdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
-                           p_inter <- round(summary(m)$coefficients[1,4],4),
                            slope <- round(summary( m )$coefficients[2,1],4),
+                           R2 = round(summary( m )$adj.r.squared,2),
+                           p_inter <- round(summary(m)$coefficients[1,4],4),
                            p_slope <- round(summary(lm( Rs_annual_bahn - 1*Rs_annual ~ Rs_annual, data = dat ))$coefficients[2,4],4),
-                           R2 = round(summary( m )$adj.r.squared,2), 
                            RSE = round(summary( m )$sigma,2 ),
                            n <- length(dat[,1])
                            ) ) 
 }
 
 printlog( SEPARATOR )
-colnames(results) <- c("PRECIP_MAP_dev", 'intercept', "p(intercept)", 'slope', "p(slope)", 'R2', 'MSE', 'n')
+colnames(results) <- c("PRECIP_MAP_dev", 'intercept', "slope", 'R2', "p_inter", 'p_slope', 'MSE', 'n')
 print( results )
 results <- results[, 1:7]
 d <- melt( results, id.vars=1 )
 p <- qplot( PRECIP_MAP_dev, value, data=d, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
-  xlab('Absolute diff between TAIR_Del and temp from paper (mm)' ) +
-  ggtitle ('Test whether difference tetween precipitation \nrelorted in paper and from Delaware has effect')
+  facet_wrap( ~variable, scales = "free", nrow = 2 ) + 
+  xlab('Abs diff precipitation (mm)' ) +
+  ggtitle ('Test difference tetween precipitation \nrelorted in paper and from Delaware')
 print( p )
 ```
 
 
+* We also compared:
+* MAT from university of Delaware university (MAT_Del) and MAT reported from the papers (a) 
+* TAnnual from University Delaware climate data (TAnnual_Del) and annual temperature from papers (study_temp) (b)
+* MAP from university of Delaware university (MAP_Del) and MAP reported from the papers (c)
+* PAnnual from University Delaware climate data (PAnnual_Del) and annual precipitation from papers (study_precip) (d)
+* The temperature and precipitation collected from University of Delaware climate data well matches the data reported from publication.
+* This also support that the divergence between global climate data set and site-specific precipitation/temperature have small effect.
 
-# 4. Results
+```{r MAP from Delaware vs MAP from paper, warning = FALSE}
+climate_Del_test()
+```
 
-## 4.1 Using Ts, TAnnual or MAT
-### 4.1.1 Using soil temperature
+* We tested the affect of preipitation and temperature divergence, using multiple linear regression, with divergence as chatergorical indicator, and the results also support that precipitation and temperature divergence have no significant effect on the Rs_annual_bahn vs Rs_annual relationship.
 
-```{r 4.1 test outlier, warning=FALSE, fig.width=8}
-# srdb_01 <- filtration1(srdb_orig)
-# figB_01 <- Rs_comparion_figure( srdb_orig, name = '3.4.1_Test outlier', var_title = "Test outliers" )
-Rs_annual_bahn_test(srdb_orig, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+```{r}
+# How much variability is due to inaccuracies in the global TAIR data?
+# Do ecosystems with more-variable climates exhibit different trends?
+climate_variability_test( srdb, var_title_T = 'Test TAIR variability'
+                          , var_title_P = 'Test precipitation variability' )
 ```
 
 
-### 4.1.2 Using T_Annual
 
-```{r, warning=FALSE}
-# TAnnual, function 
-Rs_annual_bahn_test(srdb, temp = 'Rs_annual_bahn_TAnnual', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
-```
+## 3.4.5 Test ecosystem type 
+* Rs_annual_ban vs Rs_annual show significant different relationship among different ecosystems.
+* For example, agriculture has lower slope but wetland has higher slope.
+* However, it is unlikely that the data from agriculture and wetland shifting the regression between Rs_annual_bahn vs Rs_annual away from 1:1 line.
+* As when we remove the Ag data, the Rs_annual_bahn vs Rs_annual regression still differ from 1:1 line.
 
-### 4.1.3 Using MAT
-
-```{r, warning=FALSE}
-# MAT, function 
-Rs_annual_bahn_test(srdb, 'Rs_annual_bahn_MAT', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
-```
-
-
-## 4.2 Analysis when Rs_mat cannot represent Rs_annual
-
-## 4.2.2 Does Ecosystem_type affect the relationship between Rs_annual and Rs_mat?
-
-```{r filtration_mk, fig.height = 8, fig.width = 4}
+```{r filtration_mk, fig.height = 4, fig.width = 8}
 var_eco <- sort(unique(srdb$Ecosystem_type)) # only two desert records
 var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana and natural only less than three data points available
 # create a data frame hold regression results for removed certain ecosystem type and specific ecosystem alone
@@ -326,8 +350,8 @@ for (i in 1:length (var_eco)) {
   n_kp <- length(srdb_kp_eco$Record_number)
   
   # put data in table
-  out <- rbind(out, data.frame( i, var_eco[i], R2_mv, slope_mv, p_slope_mv, intercept_mv, p_intercept_mv, mse_mv, n_mv
-                , R2_kp, slope_kp, p_slope_kp, intercept_kp, p_intercept_kp, mse_kp, n_kp ) )
+  out <- rbind(out, data.frame( i, var_eco[i], intercept_mv, slope_mv, R2_mv, p_intercept_mv, p_slope_mv, mse_mv, n_mv
+                , intercept_kp, slope_kp, R2_kp, p_intercept_kp, p_slope_kp, mse_kp, n_kp ) )
  
   
   #for (i in 3:16) { out[,i] <- as.factor(out[,i]) } why does not work
@@ -337,28 +361,35 @@ for (i in 1:length (var_eco)) {
   
 }
 
-colnames(out) <- c( "ID", "Ecosystem", "R2_mv", "Slope_mv", "p_slope_mv", "intercept_mv", "p_intercept_mv", "MSE_mv", "n_mv"
-                   , "R2_kp", "Slope_kp", "p_slope_kp", "intercept_kp", "p_intercept_kp", "MSE_kp", "n_kp" )
+colnames(out) <- c( "ID", "Ecosystem", "Inter_mv", "Slope_mv", "R2_mv", "p_inter_mv", "p_slope_mv", "MSE_mv", "n_mv"
+                   ,"intercept_kp", "Slope_kp", "R2_kp", "p_inter_kp", "p_slope_kp", "MSE_kp","n_kp" )
 out_mv <- out[,c(2:8)]
 print(out_mv)
 melt_mv <- melt(out_mv, id.vars = 1)
-p_mv <- qplot( Ecosystem, value, data=melt_mv, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
+p_mv <- qplot( as.numeric(Ecosystem), value, data=melt_mv, geom=c( "point", "line" ) ) +
+  facet_wrap( ~variable, scales = "free", nrow = 2 ) +
+  # facet_grid( variable~., scales = "free" ) + 
   xlab('Ecosystem type removed' ) + 
-  ggtitle('Test when a specific ecosystem type \nremoved from whole dataset')
+  ggtitle('Test when a specific ecosystem type \nremoved from whole dataset') +
+  scale_x_continuous(name = 'Ecosystem removed', breaks = c(1:5), labels = c('Ag', 'Forest', 'Grass', 'Shrub', 'Wet'))
 print( p_mv )
 
 out_kp <- out[,c(2,10:15)]
 print(out_kp)
 melt_kp <- melt(out_kp, id.vars = 1)
-p_kp <- qplot( Ecosystem, value, data=melt_kp, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
+p_kp <- qplot( as.numeric(Ecosystem), value, data=melt_kp, geom=c( "point", "line" ) ) +
+  facet_wrap( ~variable, scales = "free", nrow = 2 ) +
+  # facet_grid( variable~., scales = "free" ) + 
   xlab('Ecosystem type alone' ) + 
-  ggtitle('Test when only data from \na specific ecosystem type were kept')
+  ggtitle('Test when only data from \na specific ecosystem type were kept') +
+  scale_x_continuous(name = 'Ecosystem kept', breaks = c(1:5), labels = c('Ag', 'Forest', 'Grass', 'Shrub', 'Wet'))
 print( p_kp )
 ```
 
 
+* And plot Ag alone, we see the Rs_annual_bahn vs Rs_annual regression in Ag does not greatly differ from the rest.
+* We also detected the outlier points (cooks.distance > 0.5), when the outliers removed, the regression show no difference, indicating that outliers do not have large effects.
+* Similar conculsion for the wetland.
 
 ```{r agriculture, warning=FALSE}
 # Take agriculture as an example to test
@@ -374,6 +405,9 @@ Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_a
 
 ```
 
+
+
+
 ```{r wetland, warning=FALSE}
 # Take wetland as an example to test
 # Move wetland from srdb -- no big effect
@@ -388,8 +422,9 @@ Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs_
 ```
 
 
-## 4.2.3 Does Meas_method affect the relationship?
+## 3.4.6 Test Rs measure method 
 
+* Different measure method shows no big effects on the Rs_annual vs Rs_annual relationship.
 ```{r, warning=FALSE}
 # Whether measure method affects
 # unique(srdb$Meas_method)
@@ -407,7 +442,8 @@ Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs
 ```
 
 
-### 4.2.4 RA- or RH-dominated effect?
+### 3.4.7 RA- or RH-dominated effect?
+* RA dominated sites tend to have larger intercept than RH dominated sites, but no difference in slope.
 ```{r}
 # How do autotrophic- versus heterotrophic-dominated systems differ?
 # Figure C. Difference between RA-dominated sites (RC_annual>0.5 is TRUE) 
@@ -415,8 +451,8 @@ Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn', var_title = 'Rs_annual vs Rs
 figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 ```
 
-### 4.2.5 Biome effect?
-
+### 3.4.8 Biome effect?
+* Mediterranean shows big difference as other biomes.
 ```{r}
 # subset(srdb_orig, srdb_orig$Biome == 'Arctic') # only one record
 print( summary( lm( Rs_annual ~ Rs_annual_bahn * Biome, data=srdb ) ) )
@@ -428,7 +464,7 @@ print( p )
 ```
 
 
-```{r, fig.width=4, fig.height = 8}
+```{r, fig.width=8, fig.height = 4}
 # move and keep by Biome
 var_filt <- sort(unique(srdb$Biome)) # only two desert records
 var_filt <- var_filt[c(-1)] # n_arctic = 1
@@ -461,8 +497,8 @@ for (i in 1:length (var_filt)) {
   n_kp <- length(srdb_kp_filt$Record_number)
   
   # put data in table
-  out <- rbind(out, data.frame( i, var_filt[i], R2_mv, slope_mv, p_slope_mv, intercept_mv, p_intercept_mv, mse_mv, n_mv
-                , R2_kp, slope_kp, p_slope_kp, intercept_kp, p_intercept_kp, mse_kp, n_kp ) )
+  out <- rbind(out, data.frame( i, var_eco[i], intercept_mv, slope_mv, R2_mv, p_intercept_mv, p_slope_mv, mse_mv, n_mv
+                , intercept_kp, slope_kp, R2_kp, p_intercept_kp, p_slope_kp, mse_kp, n_kp ) )
  
   
   #for (i in 3:16) { out[,i] <- as.factor(out[,i]) } why does not work
@@ -472,65 +508,219 @@ for (i in 1:length (var_filt)) {
   
 }
 
-colnames(out) <- c( "ID", "Biome", "R2_mv", "Slope_mv", "p_slope_mv", "intercept_mv", "p_intercept_mv", "MSE_mv", "n_mv"
-                   , "R2_kp", "Slope_kp", "p_slope_kp", "intercept_kp", "p_intercept_kp", "MSE_kp", "n_kp" )
+colnames(out) <- c( "ID", "Biome", "Inter_mv", "Slope_mv", "R2_mv", "p_inter_mv", "p_slope_mv", "MSE_mv", "n_mv"
+                   ,"intercept_kp", "Slope_kp", "R2_kp", "p_inter_kp", "p_slope_kp", "MSE_kp","n_kp" )
 out_mv <- out[,c(2:8)]
 print(out_mv)
 melt_mv <- melt(out_mv, id.vars = 1)
-p_mv <- qplot( Biome, value, data=melt_mv, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
-  xlab('Biome type removed' ) + ggtitle('Test when a specific biom was removed')
+p_mv <- qplot( as.numeric(Biome), value, data=melt_mv, geom=c( "point", "line" ) ) +
+  facet_wrap( ~variable, scales = "free", nrow = 2 ) + 
+  xlab('Biome type removed' ) + ggtitle('Test when a specific biom was removed') +
+  scale_x_continuous(name = 'Biome removed', breaks = c(1:5), labels = c('Boreal','Med','Sub','Temp','Tropical'))
 print( p_mv )
 
 out_kp <- out[,c(2,10:15)]
 print(out_kp)
 melt_kp <- melt(out_kp, id.vars = 1)
-p_kp <- qplot( Biome, value, data=melt_kp, geom=c( "point", "line" ) ) +
-  facet_grid( variable~., scales = "free" ) + 
-  xlab('Biome type alone' ) + ggtitle('Only data from a specific biom used')
+p_kp <- qplot( as.numeric(Biome), value, data=melt_kp, geom=c( "point", "line" ) ) +
+  facet_wrap( ~variable, scales = "free", nrow = 2 ) + 
+  xlab('Biome type alone' ) + ggtitle('Only data from a specific biome used') +
+  scale_x_continuous(name = 'Biome kept', breaks = c(1:5), labels = c('Boreal','Med','Sub','Temp','Tropical'))
 print( p_kp )
 ```
 
-## 4.2.6 TAIR and precipitation variability effect?
-
-```{r}
-# How much variability is due to inaccuracies in the global TAIR data?
-# Do ecosystems with more-variable climates exhibit different trends?
-climate_variability_test( srdb, var_title_T = 'Test TAIR variability'
-                          , var_title_P = 'Test precipitation variability' )
-```
 
 
+## 3.4.9 Drought effect?
 
-## 4.2.7 Drought effect?
+* MAP's affects on the Rs_annual_bahn vs Rs_annual relationship is very limit (p ~~ 0.05).
+* The slope and intercept changes do not followed a clear pattern as MAP changing.
+* MAP is not a good drought index.
 
 ```{r, warning=FALSE, fig.width=8}
-climate_MAP_test (srdb, 'Test MAP', 'Residual plot')
+climate_MAP_test (srdb_orig, 'Test MAP', 'Residual plot')
 ```
 
-```{r, fig.height=12, fig.width=5}
+* We then tested standardized drought index (SPI).
+* SPI significantly affect Rs_annual_bahn vs Rs_annual relationship, as SPI decrease (becoming dought), slope decrease, means bahn's approach tend to overestimate Rs_annual under drought condition.
+
+```{r, fig.height=8, fig.width=4}
 # Does drought affects trends?
 SPI_test( srdb, 'Test SPI' ) #SPI can identify the drout of a year compare to the past 50 years (1964-2014)
 ```
 
+* Since SPI comparing annual precipitation in a site with average precipitation over a period (we used 1964-2014), thus SPI characterized drought condition within a year comparing with a long period, but it can not describle the spatial drought condition.
+* We thus also used another drought index: Palmer Drought Severity Index (PDSI) to characterize the spatial drought.
+* The results indicate that PDSI significantly affect the Rs_annual_bahn vs Rs_annual relationship, as it becomes drier, the slope tend to decrease.
 
-```{r, fig.height=12, fig.width=5}
+```{r, fig.height=8, fig.width=4}
 # Do drought effects different trends?
 PDSI_test( srdb, 'Test PDSI' ) # need a new SPI data
+```
+
+# 4 Update Bhan's model
+* Previous analysis show that Rs_annual_bahn do not well represent Rs-annual.
+* And we tested several possibilities cause the problem, but no solutions to make the original model well predict Rs_annual.
+* It is possible that the Bahn (2010) model only used 80 sites across globel, it is not representive.
+* We thus updated the Bahn (2010) model's parameters (but with same format, named new1 model).
+* Samilar as Bahn (2010), we also built a model for Mediterranean (n=21), and another model for the rest data (n=802).
+* We seperate Mediterranean also because the biome test results show that only Mediterranean is significantly differ from others.
+
+```{r new1, message=FALSE, fig.height=3.5, fig.width=9}
+
+# Mediterranean removed
+srdb_mv_medt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = 'Mediterranean', mk = T )
+bahn_mv_medt <- nls( Rs_annual ~ a * Rs_TAIR^b
+             , nls.control(maxiter=5000) , data = srdb_mv_medt
+             , start = list(a = 500, b = 1), trace = TRUE )
+summary(bahn_mv_medt)
+
+# mediterranean kept (21 records)
+srdb_kp_medt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = 'Mediterranean', mk = F )
+bahn_kp_medt <- nls( Rs_annual ~ a * Rs_TAIR^b
+             , nls.control(maxiter=5000) , data = srdb_kp_medt
+             , start = list(a = 500, b = 1), trace = TRUE )
+summary(bahn_kp_medt)
+
+qplot(Rs_TAIR, Rs_annual, data = srdb_mv_medt)
+
+```
+
+* The results show that Rs_annual_bahn well match Rs_annual (slope = 1, p = 0.07, intercept = 30, p = 0.05 ).
+* However, the residual plot show that as SPI and PDSI increase, the residual also show a increase trend, which means SPI and PDSI should be included in the model.
+* We thus parameterized another model (new2, including SPI and PDSI as predictors in the model).
+
+```{r new2 model, message=FALSE, fig.width=9, fig.height=3.5}
+# Mediterranean removed with SPI and DPSI
+bahn_mv_medt2 <- nls( Rs_annual ~ a * Rs_TAIR^b + c*SPI + d*pdsi_pm_mean
+             , nls.control(maxiter=5000) , data = srdb_mv_medt
+             , start = list(a = 500, b = 1, c=1, d=1), trace = TRUE )
+summary(bahn_mv_medt2)
+
+# mediterranean kept (21 records) with SPI and DPSI
+bahn_kp_medt2 <- nls( Rs_annual ~ a * Rs_TAIR^b + c*SPI 
+             , nls.control(maxiter=5000) , data = srdb_kp_medt
+             , start = list(a = 500, b = 1, c=1), trace = TRUE )
+summary(bahn_kp_medt2)
+
+# plot results
+bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+print (bahn_new2)
+```
+
+* Comparing results from Bahn (2010), new1, and new2 models
+
+```{r, warning=FALSE, fig.width=8, fig.height=8}
+bahn2010 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn', var_title = 'Bahn (2010)', res_title = 'Residual plot')
+bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+
+print(plot_grid(bahn2010, bahn_new1, bahn_new2, nrow = 3))
+```
+
+## 4.2 Using annual air temperature or mean annual temperature (MAT) to calculate Rs at mean temperature (Rs_mat)
+
+* Since high resolution soil temperature is still lacking, we want to test whether we can use Rs at annual mean air temperature (amat) or mean annual temperature (mat), and then to predict Rs_annual.
+* The results show that the regression between Rs_annual_bahn_amat and Rs_annual away from 1:1 line, with intercept significantly differ from 0 (p<0.001) and slope significantly differ from 1 (p<0.001), note that we tested both new1 and new2 model.
+* Using amat or mat show no big difference, but it is suprize that using mat is even slightly better than using T_Annual.
+
+```{r, warning=FALSE, fig.width=8, fig.height=5}
+# TAnnual, function 
+bahn_new2_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+
+print(plot_grid(bahn_new2_TAnnual, bahn_new2_MAT, nrow = 2))
+```
+
+* We detected 2 outliers in the Rs_annual_bahn vs Rs_annual regression
+* Remove these two outliers significantly improved the model (slope changed from 0.78 to 0.87, intercept decreased from 222 to 157, however, p values for slope and intercept are still < 0.001).
+
+```{r}
+# remove outliers
+Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+```
+
+
+* We adjusted the air temperature by TAnnual_adj = 2.918+0.829*TAnnual
+* MAT_adj = 2.918+0.829*MAT
+* The results are better, but still not resolve the problem (p<0.05)
+
+```{r, warning=FALSE, fig.width=8, fig.height=5}
+# TAnnual_adj = 2.918+0.829*TAnnual, same for the MAP_Del
+bahn_new2_TAnnual_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_adj', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2_MAT_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_adj', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+
+print(plot_grid(bahn_new2_TAnnual_adj, bahn_new2_MAT_adj, nrow = 2))
+```
+
+## 4.3 Re-simulate a model (new3)
+* We re-calculated soil respiration at annual mean air temperature (Rs_amat, i.e., using air temperature rather than soil temperature to calculate soil respiration when air temperature reaches annual mean).
+* Then we re-simulated the relationship between Rs_annual and Rs_amat.
+* Rs_annual = 729.09225 \* (Rs_amat ^ 0.46535) + 89.7789 \* spi -- Medeterrean
+* Rs_annual = 588.618 \* ( Rs_amat ^ 0.65022 ) + 22.59026 \* spi + 11.29775*pdsi -- exclude medeterrean
+* The results show that if we update the model, Rs_annual_bahn_amat can represent Rs_annual.
+
+```{r, message=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+# Mediterranean removed with SPI
+colnames(srdb_orig)
+bahn_mv_medt_TAnnual <- nls( Rs_annual ~ a * Rs_TAIR_TAnnual^b + c*SPI + d*pdsi_pm_mean
+             , nls.control(maxiter=5000) , data = srdb_mv_medt
+             , start = list(a = 500, b = 1, c=1, d=1), trace = TRUE )
+summary(bahn_mv_medt_TAnnual)
+
+# mediterranean kept (21 records) with SPI and DPSI
+bahn_kp_medt_TAnnual <- nls( Rs_annual ~ a * Rs_TAIR_TAnnual^b + c*SPI
+             , nls.control(maxiter=5000) , data = srdb_kp_medt
+             , start = list(a = 500, b = 1, c=1), trace = TRUE )
+summary(bahn_kp_medt_TAnnual)
+
+# plot
+# Rs_annual = 729.09225 * (rs_umol ^ 0.46535) + 89.7789*spi -- Mediterranean
+# Rs_annual = 588.618 * ( rs_umol ^ 0.65022 ) + 22.59026*spi + 11.29775*pdsi -- exclude Mediterranean
+bahn_new2_maat_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_maat', var_title = 'Bahn (new3_amat)', res_title = 'Residual plot')
+bahn_new2_maat_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_maat', var_title = 'Bahn (mew3_mat)', res_title = 'Residual plot')
+
+print(plot_grid(bahn_new2_maat_TAnnual, bahn_new2_maat_MAT, nrow = 2))
 ```
 
 
 # 5. Discussion & questions
 
+* The red dots are Rs measured from Mediterranean
+* The blue dots are Rs measured from other biomes
+* Red and blue solid lines are new1 models for Mediterranean and exclude-Mediterranean, respectively
+* Red and blue dashed lines are Bhan (2010) models for Mediterranean and exclude-Mediterranean, respectively 
+
+```{r, warning=FALSE}
+# plot and visual new1 (new2 cannot be visulized because it has SPI and PDSI indexes)
+ggplot(aes(Rs_TAIR, Rs_annual), data = srdb_mv_medt) + geom_point( colour = alpha('blue', 0.25) ) + 
+  stat_function(fun = function(x) { 477.2924 * ( x ^ 0.85483 ) }, col = 'blue') +
+  geom_point(aes(Rs_TAIR, Rs_annual), data = srdb_kp_medt, colour = alpha('red', 0.5)) + 
+  stat_function(fun = function(x) { 672.4058 * (x ^ 0.53985) }, col = 'red') + 
+  stat_function(fun = function(x) { 455.8 * (x ^ 1.0054) }, col = 'skyblue', linetype = 2) + # bahn(2010)
+  stat_function(fun = function(x) { 436.2 * (x ^ 0.926) }, col = 'pink', linetype = 2) +#bahn(2010)
+  ylab( expression( Rs_annual~(g~C~m^{-2}~yr^{-1}) ) ) + 
+  xlab( expression( Rs_amst~(g~C~m^{-2}~yr^{-1}) ) )  
+
+```
+
+
+* We have much more measurements Rs in mid-latitude regions, where developed countries are mostly located
+* It is difficult to measure soil respiration all year around in cold regions, but critical because of high rates of climate change and large soil C stocks
+* Less-developed countries are constrained by lack of resources, and thus we do not have enough measurements from spouth hetmesphere, arctic, and tropical regions [(Xu and Shang 2016)](http://dx.doi.org/10.1016/j.jplph.2016.08.007)
+
+![Global spatial distribution of soil respiration sites](SI/1. SRDB_V4_Fig1.png)
+
+* Results from this study show that Rs meansured from annual mean temperature (soil temperature or air temperature) can well represent Rs_annual, which can improve Rs measure frequency and greatly decrease cost, which become more important in regions such as south hetmesphere and cold regions. 
 
 # 6. More analysis in the future
+* Using this approach to estimate global Rs, and Rs trend? see how it differ from traditional approach （Rs~Ts relationship).
+* But, in order to predict global Rs using this approach, we need a uniform model to estimate Rs_amat (because for most sites, we do not have a site-scale-specific Rs~temp relationship).
+* We can also using random forest model, in this case, we do not need a relationship to calculate Rs_amat.
+
+* Using Rs_amat (or Rs_mst) predict Rh_annual?
 
 * 1 Using SD information with boosting?
-* 2 Use Rs_mat predict Rh?
-* 3 Use this approach estimate global Rs
-* 4 Think about application
-* 5 Update bahn model with more predictors or using regression tree method?
+* 2 Think about application
 
-```{r quality check by study ID}
-# subtest_1(5227)
-```
+
