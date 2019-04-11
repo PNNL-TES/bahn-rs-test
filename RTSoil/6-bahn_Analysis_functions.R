@@ -572,6 +572,30 @@ RC_test <- function( sdata, var_title ) {
   invisible( p )
 }
 
+srdb_v4$RC_annual
+# colnames(srdb_v4)
+# test whether Q10 differ from Ra and Rh dominated sites
+Q10_test <- function(sdata, Q10_type, var_title) {
+  printlog(SEPARATOR)
+  sdata <- sdata[!is.na(colnames(sdata) == Q10_type), ]
+  sdata <- sdata[!is.na(sdata$RC_annual), ]
+  sdata$Q10 <- sdata[, colnames(sdata) == Q10_type]
+  sdata <- sdata[sdata$Q10 > 0, ]
+  p <- ggplot(sdata, aes(Q10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
+    ggtitle(var_title)
+  print(p)
+}
+
+R10_test <- function (sdata, R10_type, var_title) {
+  printlog(SEPARATOR)
+  sdata <- sdata[!is.na(colnames(sdata) == R10_type), ]
+  sdata <- sdata[!is.na(sdata$RC_annual), ]
+  sdata$R10 <- sdata[, colnames(sdata) == R10_type]
+  
+  p <- ggplot(sdata, aes(R10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
+    ggtitle(var_title)
+  print(p)
+}
 # --------------------------------------------------------------------------------
 # Function 4.2.6: How much of the inaccuracy in the Rs_annual~Rs_annual_bahn relationship
 # is due to inaccuracies in the air temperature dataset?

@@ -54,6 +54,7 @@ source('2.0-bahn_processing.R')
 # calculate Rs_annual_bahn based on mean annual soil temperature, TAnnual, and MAT
 # Load data
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
+srdb_v4 <- read.csv("srdb-data.csv", stringsAsFactors=F)
 srdb_orig <- read.csv( INFN, stringsAsFactors=F )
 srdb_orig[is.na(srdb_orig$MAP_Del), 'MAP_Del'] <- srdb_orig[is.na(srdb_orig$MAP_Del), 'MAP']
 
@@ -455,6 +456,23 @@ Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'Rs_annual v
 # and RH-dominated ones (RC_annual>0.5 is FALSE).
 figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 ```
+
+```{r}
+# test Q10 under Ra and Rh dominant sites
+Q10_test(srdb_v4, 'Q10_0_10', 'Test Q10 (0-10) for Ra and Rh dominate sites')
+Q10_test(srdb_v4, 'Q10_5_15', 'Test Q10 (5-15) for Ra and Rh dominate sites')
+Q10_test(srdb_v4, 'Q10_0_20', 'Test Q10 (0-20) for Ra and Rh dominate sites')
+```
+
+```{r}
+# test Q10 under Ra and Rh dominant sites
+R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
+R10_test(srdb_v4, 'Q10_0_10', 'Test Q10 (0-10) for Ra and Rh dominate sites')
+R10_test(srdb_v4, 'Q10_5_15', 'Test Q10 (5-15) for Ra and Rh dominate sites')
+R10_test(srdb_v4, 'Q10_10_20', 'Test Q10 (10-20) for Ra and Rh dominate sites')
+R10_test(srdb_v4, 'Q10_0_20', 'Test Q10 (0-20) for Ra and Rh dominate sites')
+```
+
 
 ### 3.4.8 Biome effect?
 * Mediterranean shows big difference as other biomes.
