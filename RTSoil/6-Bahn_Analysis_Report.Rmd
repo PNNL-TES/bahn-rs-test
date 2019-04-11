@@ -1,7 +1,7 @@
 ---
 title: "Predicting annual soil respiration from its flux at mean annual temperature"
-author: "Jinshi"
-date: "March 26, 2019"
+author: "   "
+date: "April 16, 2019"
 output:
   html_document: default
   pdf_document: default
@@ -303,7 +303,7 @@ print( p )
 climate_Del_test()
 ```
 
-* We tested the affect of preipitation and temperature divergence, using multiple linear regression, with divergence as chatergorical indicator, and the results also support that precipitation and temperature divergence have no significant effect on the Rs_annual_bahn vs Rs_annual relationship.
+* We tested the affect of preipitation and temperature variability (quantified by standard diviation from 1961 to 2014), using multiple linear regression, with divergence as chatergorical indicator, and the results also support that precipitation and temperature divergence have no significant effect on the Rs_annual_bahn vs Rs_annual relationship.
 
 ```{r}
 # How much variability is due to inaccuracies in the global TAIR data?
@@ -402,12 +402,12 @@ print( p_kp )
 # Move agriculture from srdb -- no big effect
 srdb_mv_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Agriculture', mk = T )
 # figB_mv_ag <- Rs_comparion_figure( srdb_mv_ag, var_title = 'When agriculture data were removed' )
-Rs_annual_bahn_test(srdb_mv_ag, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_ag, 'Rs_annual_bahn_log', var_title = 'Agriculture sites removed', res_title = 'Residual plot')
 
 # Agriculture alone -- not significant differ
 srdb_kp_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, 'Agriculture', mk = F )
 # figB_kp_ag <- Rs_comparion_figure( srdb_kp_ag, var_title = 'Only data from agriculture used' )
-Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn_log', var_title = 'Only agriculture sites', res_title = 'Residual plot')
 
 ```
 
@@ -419,12 +419,12 @@ Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs 
 # Move wetland from srdb -- no big effect
 srdb_mv_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = T )
 # figB_mv_wet <- Rs_comparion_figure( srdb_mv_wet, var_title = 'When data from wetland were removed' )
-Rs_annual_bahn_test(srdb_mv_wet, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_wet, 'Rs_annual_bahn_log', var_title = 'Wetland sites removed', res_title = 'Residual plot')
 
 # Wetland alone -- not significant differ
 srdb_kp_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = F )
 # figB_kp_wet <- Rs_comparion_figure( srdb_kp_wet, var_title = 'Only data from wetland used' )
-Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn_log', var_title = 'Only wetland sites', res_title = 'Residual plot')
 ```
 
 
@@ -438,12 +438,12 @@ Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs
 # IRGA method
 srdb_mv_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = T )
-Rs_annual_bahn_test(srdb_mv_IRGA, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_IRGA, 'Rs_annual_bahn_log', var_title = 'Alkali measured sites', res_title = 'Residual plot')
 
 # Alkaline method
 srdb_kp_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = F )
-Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'Rs_annual vs Rs_annual_bahn', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'IRGA and GC measured sites', res_title = 'Residual plot')
 
 ```
 
@@ -457,21 +457,22 @@ Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'Rs_annual v
 figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 ```
 
-```{r Q10 test}
+* We tested Q10 and R10 at Ra and Rh dominate sites, Ra dominate sites have larger Q10 (0-10, 5-10, 10-20, and 0-20) vaues and R10 values.
+```{r Q10 test, fig.height=6, fig.width=8}
 # test Q10 under Ra and Rh dominant sites
-Q10_test(srdb_v4, 'Q10_0_10', 'Test Q10 (0-10) for Ra and Rh dominate sites')
-Q10_test(srdb_v4, 'Q10_5_15', 'Test Q10 (5-15) for Ra and Rh dominate sites')
-R10_test(srdb_v4, 'Q10_10_20', 'Test Q10 (10-20) for Ra and Rh dominate sites')
-Q10_test(srdb_v4, 'Q10_0_20', 'Test Q10 (0-20) for Ra and Rh dominate sites')
+Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', ' A (0-10 cm) ')
+Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', ' B (5-15 cm) ')
+Q10_3 <- Q10_test(srdb_v4, 'Q10_10_20', ' C (10-20 cm) ')
+Q10_4 <- Q10_test(srdb_v4, 'Q10_0_20', ' D (0-20 cm) ')
+
+plot_grid(Q10_1, Q10_2, Q10_3, Q10_4, ncol = 2)  
+
 ```
 
 ```{r R10 test}
 # test Q10 under Ra and Rh dominant sites
 R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
-# R10_test(srdb_v4, 'R10_0_10', 'Test R10 (0-10) for Ra and Rh dominate sites')
-# R10_test(srdb_v4, 'R10_5_15', 'Test R10 (5-15) for Ra and Rh dominate sites')
-# R10_test(srdb_v4, 'R10_10_20', 'Test R10 (10-20) for Ra and Rh dominate sites')
-# R10_test(srdb_v4, 'R10_0_20', 'Test R10 (0-20) for Ra and Rh dominate sites')
+
 ```
 
 
@@ -568,7 +569,7 @@ climate_MAP_test (srdb_orig, 'Test MAP', 'Residual plot')
 * We then tested standardized drought index (SPI).
 * SPI significantly affect Rs_annual_bahn vs Rs_annual relationship, as SPI decrease (becoming dought), slope decrease, means bahn's approach tend to overestimate Rs_annual under drought condition.
 
-```{r, fig.height=7, fig.width=3}
+```{r, fig.height=4, fig.width=8}
 # Does drought affects trends?
 SPI_test( srdb, 'Test SPI' ) #SPI can identify the drout of a year compare to the past 50 years (1964-2014)
 ```
@@ -577,9 +578,9 @@ SPI_test( srdb, 'Test SPI' ) #SPI can identify the drout of a year compare to th
 * We thus also used another drought index: Palmer Drought Severity Index (PDSI) to characterize the spatial drought.
 * The results indicate that PDSI significantly affect the Rs_annual_bahn vs Rs_annual relationship, as it becomes drier, the slope tend to decrease.
 
-```{r, fig.height=8, fig.width=4}
+```{r, fig.height=4, fig.width=8}
 # Do drought effects different trends?
-PDSI_test( srdb, 'Test PDSI' ) # need a new SPI data
+PDSI_test( srdb, var_title = F ) # need a new SPI data
 ```
 
 # 4 Update Bhan's model
@@ -675,7 +676,7 @@ print(plot_grid(bahn_new2_TAnnual, bahn_new2_MAT, nrow = 2))
 
 ```{r}
 # remove outliers
-Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual_log', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual_log', var_title = 'Bahn (new1)', res_title = 'Residual plot', var_outlier = 0.5)
 ```
 
 

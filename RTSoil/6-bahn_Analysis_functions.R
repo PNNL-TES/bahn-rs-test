@@ -243,8 +243,8 @@ TS_Source_test <- function( sdata ) {
     ggtitle("Rs_Annual vs. Rs_annual_bahn by different Ts sources") 
   
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) +
-    xlab (expression ("Rs_annual_bahn (g C m"^-2*"yr"^-1* ")")) +
-    ylab (expression ("Rs_annual (g C m"^-2*"yr"^-1* ")")) +
+    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")")) +
     scale_fill_discrete("Ts source")
       
   print( p )
@@ -276,9 +276,11 @@ AC_test <- function( sdata, coverage, var_title ) {
   m <- lm( Rs_annual_log ~ Rs_annual_bahn_log * AC2, data=sdata )
   print( summary( m ) )
   
-  p <- qplot( Rs_annual_bahn_log, Rs_annual_log, data=subset( sdata, !is.na( AC2 ) ), color=AC2 )
+  p <- ggplot( aes(Rs_annual_bahn_log, Rs_annual_log, color=AC2), data=subset( sdata, !is.na( AC2 ) ) ) + geom_point(alpha=0.25, size = 2)
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 ) +
-    ggtitle(var_title) + theme(legend.position = 'bottom')
+    ggtitle(var_title) + theme(legend.position = 'bottom') +
+    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")")) 
   
 }
 
@@ -391,7 +393,7 @@ Rs_annual_bahn_test <- function( sdata, temp, name="", quiet=F, var_title, res_t
 # -----------------------------------------------------------------------------
 # Function 4.2: Test outlier
 
-Outlier_test <- function( sdata, temp, name="", quiet=F, var_title, res_title ) {
+Outlier_test <- function( sdata, temp, name="", quiet=F, var_title, res_title, var_outlier ) {
   printlog( SEPARATOR )
   printlog( "How are Rs_annual and Rs_annual_bahn_Temp related?" )
   printdims( sdata )
@@ -447,7 +449,7 @@ Outlier_test <- function( sdata, temp, name="", quiet=F, var_title, res_title ) 
   # Test whether slope differ from 1
   
   cooks_count <- 0		# if 0, outlier code is disabled
-  influentials <- which( cooks.distance( m ) > 0.5 )
+  influentials <- which( cooks.distance( m ) > var_outlier )
   print(influentials)
   cooks_count <- length( influentials )
   print( paste("Influential outliers =", cooks_count ))
@@ -566,7 +568,9 @@ RC_test <- function( sdata, var_title ) {
   p <- ggplot( subset( sdata, !is.na( RC_annual ) ), aes( Rs_annual_bahn_log, Rs_annual_log, color=RC_annual>0.5 ) )
   p <- p + geom_point()
   p <- p + geom_smooth( method='lm' )
-  p <- p + geom_abline( slope=1, linetype=2 ) + ggtitle (var_title)
+  p <- p + geom_abline( slope=1, linetype=2 ) + ggtitle (var_title) +
+    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")")) 
   print( p )
   # saveplot(outputDir = OUTPUT_DIR,pname = "3-RC_effect" )
   invisible( p )
@@ -580,9 +584,17 @@ Q10_test <- function(sdata, Q10_type, var_title) {
   sdata <- sdata[!is.na(sdata$RC_annual), ]
   sdata$Q10 <- sdata[, colnames(sdata) == Q10_type]
   sdata <- sdata[sdata$Q10 > 0, ]
+  sdata$Ra_Rh_dom <- ifelse(sdata$RC_annual>0.5, 'Ra_dom', 'Rh_dom')
+  
+  print(paste0('**********ANOVA**********', Q10_type))
+  anova <- aov(Q10 ~ Ra_Rh_dom, data = sdata)
+  print (summary(anova))
+  
   p <- ggplot(sdata, aes(Q10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
-    ggtitle(var_title)
-  print(p)
+    ggtitle(var_title) +
+    xlab(expression(Q[10])) +
+    theme(legend.position = c(0.75,0.65), legend.background = element_rect(colour = 'transparent', fill = alpha('white', 0), size = 0.75) )
+  
 }
 
 R10_test <- function (sdata, R10_type, var_title) {
@@ -592,9 +604,11 @@ R10_test <- function (sdata, R10_type, var_title) {
   sdata$R10 <- sdata[, colnames(sdata) == R10_type]
   
   p <- ggplot(sdata, aes(R10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
-    ggtitle(var_title)
+    ggtitle(var_title) + xlab(expression( R[10] ))
   print(p)
 }
+
+
 # --------------------------------------------------------------------------------
 # Function 4.2.6: How much of the inaccuracy in the Rs_annual~Rs_annual_bahn relationship
 # is due to inaccuracies in the air temperature dataset?
@@ -619,7 +633,9 @@ climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
   sdata$TAIR_SD2 <- cut( sdata$TAIR_SD, 3 )
   m <- lm( Rs_annual_log~Rs_annual_bahn_log * TAIR_SD2, data=sdata )
   print( summary( m ) )
-  p <- ggplot(sdata, aes(Rs_annual_bahn_log, Rs_annual_log, color=factor(TAIR_SD2) )) + geom_point(alpha = 0.25, size = 2)
+  p <- ggplot(sdata, aes(Rs_annual_bahn_log, Rs_annual_log, color=factor(TAIR_SD2) )) + geom_point(alpha = 0.25, size = 2) +
+    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")")) 
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
   p <- p + scale_color_discrete( "Monthly tair\nvariability" ) + 
     ggtitle(var_title_T) + 
@@ -635,7 +651,9 @@ climate_variability_test <- function( sdata, var_title_T, var_title_P ) {
   p2 <- p2 + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
   p2 <- p2 + scale_color_discrete( "Monthly precip\nvariability" ) + 
     ggtitle (var_title_P) + 
-    theme(legend.position = c(0.75, 0.2), legend.background = element_rect(colour = 'transparent', fill = alpha('white',0), size = 0.75))
+    theme(legend.position = c(0.75, 0.2), legend.background = element_rect(colour = 'transparent', fill = alpha('white',0), size = 0.75))+
+    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")"))
   # print( p2 )
  	print(plot_grid(p, p2, ncol = 2, labels = c('( a )', '( b )'), vjust = 4, hjust = c(-2.25, -2.25) ) )
  	
@@ -658,7 +676,9 @@ climate_MAP_test <- function( sdata, var_title, res_title ) {
   sdata$standardized_resids <- rstandard( m )
   p <- ggplot( aes(Rs_annual_bahn_log, Rs_annual_log, color=MAP_Del2), data=sdata ) + geom_point (alpha = 0.25, size = 2) +
     theme(legend.position = c(0.8,0.3), legend.background = element_rect(fill = alpha('white', 0), alpha('white', 0))
-          , legend.title = element_blank() ) 
+          , legend.title = element_blank() ) + xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")"))
+    
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
   p <- p + scale_color_discrete( "MAP" ) + ggtitle (var_title)
   
@@ -673,7 +693,7 @@ climate_MAP_test <- function( sdata, var_title, res_title ) {
 }
 
 # -----------------------------------------------------------------------------
-SPI_test <- function( sdata, var_title ) {
+SPI_test <- function( sdata, var_title = NA ) {
   printlog( SEPARATOR )
   printlog( "How does drought affect this relationship? (discrete)" )
   sdata$SPI2 <- cut( sdata$SPI, breaks = seq(-3, 5, 2) ) #c( 0, 0.33, 0.67, 1 ), right=F )
@@ -685,7 +705,9 @@ SPI_test <- function( sdata, var_title ) {
     theme(legend.position = c(0.85,0.3), legend.title = element_blank()
           , legend.background = element_rect(colour = 'transparent', fill = alpha('white',0), size = 0.75))
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-  p <- p + scale_color_discrete( "SPI" ) + ggtitle (var_title)
+  p <- p + scale_color_discrete( "SPI" ) +
+    xlab( expression( ln (Rs_bahn)~(g~C~m^{-2}~yr^{-1}) ) ) + 
+    ylab( expression( ln (Rs_annual)~(g~C~m^{-2}~yr^{-1}) ) ) 
   
   p1 <- ggplot( sdata, aes( SPI, standardized_resids )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
@@ -705,13 +727,13 @@ SPI_test <- function( sdata, var_title ) {
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
     xlab( expression( SPI ) ) 
   # ggarrange(p, p1, ncol = 2) 
-  print( plot_grid(p, p1, p2, labels = c("( a )", "( b )", "( c )"), ncol = 1, align = 'v', vjust = c(5,4,4), hjust = -2.5 ) )
+  print( plot_grid(p, p1, p2, labels = c("( a )", "( b )", "( c )"), ncol = 3, align = 'v', vjust = c(4,4,4), hjust = -2.5 ) )
   
   invisible (list(m, m2, p, p1, p2))
 }
 
 # -----------------------------------------------------------------------------
-PDSI_test <- function( sdata, var_title ) {
+PDSI_test <- function( sdata, var_title=F ) {
   printlog( SEPARATOR )
   printlog( "How does drought affect this relationship? (discrete)" )
   sdata$PDSI2 <- cut( sdata$pdsi_pm_mean, breaks = 4 ) #c( 0, 0.33, 0.67, 1 ), right=F )
@@ -720,10 +742,12 @@ PDSI_test <- function( sdata, var_title ) {
   
   sdata$standardized_resids <- rstandard( m )
   p <- ggplot( aes(Rs_annual_bahn_log, Rs_annual_log, color=PDSI2), data=sdata ) + geom_point(alpha=0.25, size = 1) +
-    theme(legend.position = c(0.85,0.3), legend.title = element_blank()
+    theme(legend.position = c(0.75,0.2), legend.title = element_blank()
           , legend.background = element_rect(fill = alpha('white',0), colour = 'transparent', size = 0.75))
   p <- p + geom_smooth( method='lm' ) + geom_abline( linetype=2 )
-  p <- p + scale_color_discrete( "PDSI" ) + ggtitle (var_title)
+  p <- p + scale_color_discrete( "PDSI" ) +
+    xlab( expression( ln (Rs_bahn)~(g~C~m^{-2}~yr^{-1}) ) ) + 
+    ylab( expression( ln (Rs_annual)~(g~C~m^{-2}~yr^{-1}) ) ) 
   
   p1 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
@@ -742,7 +766,7 @@ PDSI_test <- function( sdata, var_title ) {
   
   p2 <- p2 + geom_point( alpha = 0.25 ) + geom_smooth( method='lm' ) +  ylim(-5, 8)
   # ggarrange(p, p1, ncol = 2) 
-  print( plot_grid(p, p1, p2, labels = c("( a )", "( b )", "( c )"), ncol = 1, align = 'v', vjust = c(5,4,4), hjust = -2.5 ) )
+  print( plot_grid(p, p1, p2, labels = c("( a )", "( b )", "( c )"), ncol = 3, align = 'v', vjust = c(4,4,4), hjust = -2.5 ) )
   
   invisible (list(m, m2, p, p1, p2))
 }
