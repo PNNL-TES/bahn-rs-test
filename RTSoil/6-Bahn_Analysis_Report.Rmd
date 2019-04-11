@@ -3,9 +3,9 @@ title: "Predicting annual soil respiration from its flux at mean annual temperat
 author: "Jinshi"
 date: "March 26, 2019"
 output:
-  word_document: default
-  pdf_document: default
   html_document: default
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r preliminaries, message=FALSE, include=FALSE, echo=FALSE}
@@ -50,7 +50,7 @@ source('2.0-bahn_processing.R')
 
 
 
-```{r, message='hide'}
+```{r, message='hide', cache=TRUE}
 # calculate Rs_annual_bahn based on mean annual soil temperature, TAnnual, and MAT
 # Load data
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
@@ -457,20 +457,21 @@ Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'Rs_annual v
 figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 ```
 
-```{r}
+```{r Q10 test}
 # test Q10 under Ra and Rh dominant sites
 Q10_test(srdb_v4, 'Q10_0_10', 'Test Q10 (0-10) for Ra and Rh dominate sites')
 Q10_test(srdb_v4, 'Q10_5_15', 'Test Q10 (5-15) for Ra and Rh dominate sites')
+R10_test(srdb_v4, 'Q10_10_20', 'Test Q10 (10-20) for Ra and Rh dominate sites')
 Q10_test(srdb_v4, 'Q10_0_20', 'Test Q10 (0-20) for Ra and Rh dominate sites')
 ```
 
-```{r}
+```{r R10 test}
 # test Q10 under Ra and Rh dominant sites
 R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
-R10_test(srdb_v4, 'Q10_0_10', 'Test Q10 (0-10) for Ra and Rh dominate sites')
-R10_test(srdb_v4, 'Q10_5_15', 'Test Q10 (5-15) for Ra and Rh dominate sites')
-R10_test(srdb_v4, 'Q10_10_20', 'Test Q10 (10-20) for Ra and Rh dominate sites')
-R10_test(srdb_v4, 'Q10_0_20', 'Test Q10 (0-20) for Ra and Rh dominate sites')
+# R10_test(srdb_v4, 'R10_0_10', 'Test R10 (0-10) for Ra and Rh dominate sites')
+# R10_test(srdb_v4, 'R10_5_15', 'Test R10 (5-15) for Ra and Rh dominate sites')
+# R10_test(srdb_v4, 'R10_10_20', 'Test R10 (10-20) for Ra and Rh dominate sites')
+# R10_test(srdb_v4, 'R10_0_20', 'Test R10 (0-20) for Ra and Rh dominate sites')
 ```
 
 

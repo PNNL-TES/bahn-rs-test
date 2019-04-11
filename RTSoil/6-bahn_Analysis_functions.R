@@ -572,7 +572,6 @@ RC_test <- function( sdata, var_title ) {
   invisible( p )
 }
 
-srdb_v4$RC_annual
 # colnames(srdb_v4)
 # test whether Q10 differ from Ra and Rh dominated sites
 Q10_test <- function(sdata, Q10_type, var_title) {
