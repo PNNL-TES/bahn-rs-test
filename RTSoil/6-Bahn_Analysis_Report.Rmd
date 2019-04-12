@@ -110,10 +110,6 @@ srdb_orig <- compute_rs_mat( srdb_orig, "Study_TS_Annual")
 srdb_orig <- srdb_orig[!is.na(srdb_orig$Rs_annual_bahn),]
 # srdb_orig <- srdb
 
-# log tramsfor
-srdb_orig$Rs_annual_log <- log(srdb_orig$Rs_annual)
-srdb_orig$Rs_annual_bahn_log <- log(srdb_orig$Rs_annual_bahn)
-
 srdb <- srdb_orig
 ```
 
@@ -184,7 +180,7 @@ figA <- climate_figure( srdb_orig )
 * The residuals have a clear trend with standardized precipitation index change (SPI, a drought index, the smaller, the drier) and Palmer Drought Severity Index (PDSI, the smaller, the drier) increase.
 
 ```{r, fig.height=3.5, fig.width=9}
-print(bahn_vs_new (srdb_orig, 'Rs_annual_bahn_log', var_title = 'Bahn (2010)', res_title = 'Residual plot')) 
+print(bahn_vs_new (srdb_orig, 'Rs_annual_bahn', var_title = 'Bahn (2010)', res_title = 'Residual plot')) 
 ```
 
 
@@ -228,7 +224,7 @@ plot_grid(AC_test( srdb, srdb$Annual_TS_Coverage, var_title = 'Test Ts coverage'
 results <- data.frame()
 for( i in c( 6, 4, 2, 1, 0.5, 0.25 ) ) {
   dat <- filtration3( srdb_orig, i, quiet=T )
-  m <- lm(Rs_annual_log ~ Rs_annual_bahn_log, data = dat)
+  m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  tdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
                            slope <- round(summary( m )$coefficients[2,1],4),
@@ -266,7 +262,7 @@ print( p )
 results <- data.frame()
 for( i in c( seq(50, 3000, 200) ) ) {
   dat <- filtration4( srdb_orig, i, quiet=T )
-  m <- lm(Rs_annual_log ~ Rs_annual_bahn_log, data = dat)
+  m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
   results <- rbind(results, data.frame(  pdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
                            slope <- round(summary( m )$coefficients[2,1],4),
@@ -321,7 +317,7 @@ climate_variability_test( srdb, var_title_T = 'Test TAIR variability'
 * As when we remove the Ag data, the Rs_annual_bahn vs Rs_annual regression still differ from 1:1 line.
 
 ```{r filtration_mk, fig.height = 4, fig.width = 8}
-var_eco <- sort(unique(srdb$Ecosystem_type)) # only two desert records
+var_eco <-   # only two desert records
 var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana and natural only less than three data points available
 # create a data frame hold regression results for removed certain ecosystem type and specific ecosystem alone
 # srdb_mv_ag <- filtration_mv ( srdb_orig, 'Agriculture' ) # agriculture as example
@@ -333,7 +329,7 @@ out <- data.frame()
 for (i in 1:length (var_eco)) {
   # a specific ecosystem removed 
   srdb_mv_eco <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = var_eco[i], mk = T )
-  lm_mv <- lm(Rs_annual_log ~ Rs_annual_bahn_log  , data = srdb_mv_eco) #unique(srdb_mv_eco$Ecosystem_type)
+  lm_mv <- lm(Rs_annual ~ Rs_annual_bahn , data = srdb_mv_eco) #unique(srdb_mv_eco$Ecosystem_type)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
   p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_eco ) )$coefficients[ 2, 4 ], 4)
@@ -345,7 +341,7 @@ for (i in 1:length (var_eco)) {
  
   # eco alone  
   srdb_kp_eco <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = var_eco[i], mk = F )
-  lm_kp <- lm(Rs_annual_log ~ Rs_annual_bahn_log  , data = srdb_kp_eco)
+  lm_kp <- lm(Rs_annual ~ Rs_annual_bahn , data = srdb_kp_eco)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
   p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_eco ) )$coefficients[ 2, 4 ], 4)
@@ -402,12 +398,12 @@ print( p_kp )
 # Move agriculture from srdb -- no big effect
 srdb_mv_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Agriculture', mk = T )
 # figB_mv_ag <- Rs_comparion_figure( srdb_mv_ag, var_title = 'When agriculture data were removed' )
-Rs_annual_bahn_test(srdb_mv_ag, 'Rs_annual_bahn_log', var_title = 'Agriculture sites removed', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_ag, 'Rs_annual_bahn', var_title = 'Agriculture sites removed', res_title = 'Residual plot')
 
 # Agriculture alone -- not significant differ
 srdb_kp_ag <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, 'Agriculture', mk = F )
 # figB_kp_ag <- Rs_comparion_figure( srdb_kp_ag, var_title = 'Only data from agriculture used' )
-Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn_log', var_title = 'Only agriculture sites', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn', var_title = 'Only agriculture sites', res_title = 'Residual plot')
 
 ```
 
@@ -419,12 +415,12 @@ Rs_annual_bahn_test(srdb_kp_ag, 'Rs_annual_bahn_log', var_title = 'Only agricult
 # Move wetland from srdb -- no big effect
 srdb_mv_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = T )
 # figB_mv_wet <- Rs_comparion_figure( srdb_mv_wet, var_title = 'When data from wetland were removed' )
-Rs_annual_bahn_test(srdb_mv_wet, 'Rs_annual_bahn_log', var_title = 'Wetland sites removed', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_wet, 'Rs_annual_bahn', var_title = 'Wetland sites removed', res_title = 'Residual plot')
 
 # Wetland alone -- not significant differ
 srdb_kp_wet <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = 'Wetland', mk = F )
 # figB_kp_wet <- Rs_comparion_figure( srdb_kp_wet, var_title = 'Only data from wetland used' )
-Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn_log', var_title = 'Only wetland sites', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn', var_title = 'Only wetland sites', res_title = 'Residual plot')
 ```
 
 
@@ -438,12 +434,12 @@ Rs_annual_bahn_test(srdb_kp_wet, 'Rs_annual_bahn_log', var_title = 'Only wetland
 # IRGA method
 srdb_mv_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = T )
-Rs_annual_bahn_test(srdb_mv_IRGA, 'Rs_annual_bahn_log', var_title = 'Alkali measured sites', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_mv_IRGA, 'Rs_annual_bahn', var_title = 'Alkali measured sites', res_title = 'Residual plot')
 
 # Alkaline method
 srdb_kp_IRGA <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Meas_method
                                , var = c( "IRGA", "Gas chromatography", "Gas Chromatography" ), mk = F )
-Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn_log', var_title = 'IRGA and GC measured sites', res_title = 'Residual plot')
+Rs_annual_bahn_test(srdb_kp_IRGA, 'Rs_annual_bahn', var_title = 'IRGA and GC measured sites', res_title = 'Residual plot' )
 
 ```
 
@@ -480,8 +476,8 @@ R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
 * Mediterranean shows big difference as other biomes.
 ```{r}
 # subset(srdb_orig, srdb_orig$Biome == 'Arctic') # only one record
-print( summary( lm( Rs_annual ~ Rs_annual_bahn_log * Biome, data=srdb ) ) )
-p <- ggplot( srdb_orig, aes( Rs_annual_bahn_log, Rs_annual_log, color= Biome) )
+print( summary( lm( Rs_annual ~ Rs_annual_bahn * Biome, data=srdb ) ) )
+p <- ggplot( srdb_orig, aes( log(Rs_annual_bahn), log(Rs_annual), color= Biome) )
 p <- p + geom_point(alpha = 0.2, size = 2) + ggtitle( 'Test biome effects' )
 p <- p + geom_smooth( method='lm' )
 p <- p + geom_abline( slope=1, linetype=2 )
@@ -499,7 +495,7 @@ out <- data.frame()
 for (i in 1:length (var_filt)) {
   # a specific ecosystem removed 
   srdb_mv_filt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = var_filt[i], mk = T )
-  lm_mv <- lm(Rs_annual_log ~ Rs_annual_bahn_log  , data = srdb_mv_filt) #unique(srdb_mv_filt$Biome)
+  lm_mv <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_mv_filt) #unique(srdb_mv_filt$Biome)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
   p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_filt ) )$coefficients[ 2, 4 ], 4)
@@ -511,7 +507,7 @@ for (i in 1:length (var_filt)) {
  
   # eco alone  
   srdb_kp_filt <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Biome, var = var_filt[i], mk = F )
-  lm_kp <- lm(Rs_annual_log ~ Rs_annual_bahn_log  , data = srdb_kp_filt)
+  lm_kp <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_kp_filt)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
   p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_filt ) )$coefficients[ 2, 4 ], 4)
@@ -617,8 +613,7 @@ ggplot(aes(Rs_TAIR, Rs_annual), data = srdb_mv_medt) + geom_point( colour = alph
   xlab( expression( Rs_amst~(g~C~m^{-2}~yr^{-1}) ) ) 
 
 # plot results for new1 model
-srdb_orig$Rs_annual_bahn_new1_log <- log(srdb_orig$Rs_annual_bahn_new1)
-bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1_log', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1', var_title = 'Bahn (new1)', res_title = 'Residual plot')
 print (bahn_new1)
 ```
 
@@ -640,17 +635,16 @@ bahn_kp_medt2 <- nls( Rs_annual ~ a * Rs_TAIR^b + c*SPI
 summary(bahn_kp_medt2)
 
 # plot results
-srdb_orig$Rs_annual_bahn_new2_log <- log(srdb_orig$Rs_annual_bahn_new2)
-bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2_log', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
 print (bahn_new2)
 ```
 
 * Comparing results from Bahn (2010), new1, and new2 models
 
 ```{r, warning=FALSE, fig.width=8, fig.height=8}
-bahn2010 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_log', var_title = 'Bahn (2010)', res_title = 'Residual plot')
-bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1_log', var_title = 'Bahn (new1)', res_title = 'Residual plot')
-bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2_log', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+bahn2010 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn', var_title = 'Bahn (2010)', res_title = 'Residual plot')
+bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
 
 print(plot_grid(bahn2010, bahn_new1, bahn_new2, nrow = 3))
 ```
@@ -663,10 +657,8 @@ print(plot_grid(bahn2010, bahn_new1, bahn_new2, nrow = 3))
 
 ```{r, warning=FALSE, fig.width=8, fig.height=5}
 # TAnnual, function 
-srdb_orig$Rs_annual_bahn_TAnnual_log <- log(srdb_orig$Rs_annual_bahn_TAnnual)
-bahn_new2_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_log', var_title = 'Bahn (new1)', res_title = 'Residual plot')
-srdb_orig$Rs_annual_bahn_MAT_log <- log(srdb_orig$Rs_annual_bahn_MAT)
-bahn_new2_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_log', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+bahn_new2_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
 
 print(plot_grid(bahn_new2_TAnnual, bahn_new2_MAT, nrow = 2))
 ```
@@ -676,7 +668,7 @@ print(plot_grid(bahn_new2_TAnnual, bahn_new2_MAT, nrow = 2))
 
 ```{r}
 # remove outliers
-Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual_log', var_title = 'Bahn (new1)', res_title = 'Residual plot', var_outlier = 0.5)
+Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual', var_title = 'Bahn (new1)', res_title = 'Residual plot', var_outlier = 0.5)
 ```
 
 
@@ -686,10 +678,8 @@ Outlier_test(srdb_orig, 'Rs_annual_bahn_TAnnual_log', var_title = 'Bahn (new1)',
 
 ```{r, warning=FALSE, fig.width=8, fig.height=5}
 # TAnnual_adj = 2.918+0.829*TAnnual, same for the MAP_Del
-srdb_orig$Rs_annual_bahn_TAnnual_adj_log <- log(srdb_orig$Rs_annual_bahn_TAnnual_adj) 
-bahn_new2_TAnnual_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_adj_log', var_title = 'Bahn (new1)', res_title = 'Residual plot')
-srdb_orig$Rs_annual_bahn_MAT_adj_log <- log(srdb_orig$Rs_annual_bahn_MAT_adj) 
-bahn_new2_MAT_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_adj_log', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+bahn_new2_TAnnual_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_adj', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2_MAT_adj <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_adj', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
 
 print(plot_grid(bahn_new2_TAnnual_adj, bahn_new2_MAT_adj, nrow = 2))
 ```
@@ -718,10 +708,8 @@ summary(bahn_kp_medt_TAnnual)
 # plot
 # Rs_annual = 729.09225 * (rs_umol ^ 0.46535) + 89.7789*spi -- Mediterranean
 # Rs_annual = 588.618 * ( rs_umol ^ 0.65022 ) + 22.59026*spi + 11.29775*pdsi -- exclude Mediterranean
-srdb_orig$Rs_annual_bahn_TAnnual_maat_log <-log(srdb_orig$Rs_annual_bahn_TAnnual_maat)
-bahn_new2_maat_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_maat_log', var_title = 'Bahn (new3_amat)', res_title = 'Residual plot')
-srdb_orig$Rs_annual_bahn_MAT_maat_log <-log(srdb_orig$Rs_annual_bahn_MAT_maat)
-bahn_new2_maat_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_maat_log', var_title = 'Bahn (mew3_mat)', res_title = 'Residual plot')
+bahn_new2_maat_TAnnual <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_TAnnual_maat', var_title = 'Bahn (new3_amat)', res_title = 'Residual plot')
+bahn_new2_maat_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_maat', var_title = 'Bahn (mew3_mat)', res_title = 'Residual plot')
 
 print(plot_grid(bahn_new2_maat_TAnnual, bahn_new2_maat_MAT, nrow = 2))
 ```
@@ -754,4 +742,43 @@ print(plot_grid(bahn_new2_maat_TAnnual, bahn_new2_maat_MAT, nrow = 2))
 * 1 Using SD information with boosting?
 * 2 Think about application
 
+
+# 7. Select graphs for poster
+```{r, fig.height=6}
+plot_Rs_vs_bahn (srdb)
+```
+
+```{r Q10 test, fig.height=6, fig.width=8}
+# test Q10 under Ra and Rh dominant sites
+Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', ' A (0-10 cm) ')
+Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', ' B (5-15 cm) ')
+Q10_3 <- Q10_test(srdb_v4, 'Q10_10_20', ' C (10-20 cm) ')
+Q10_4 <- Q10_test(srdb_v4, 'Q10_0_20', ' D (0-20 cm) ')
+
+plot_grid(Q10_1, Q10_2, Q10_3, Q10_4, ncol = 2)  
+
+```
+
+```{r R10 test}
+# test Q10 under Ra and Rh dominant sites
+R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
+
+```
+
+
+```{r, warning=FALSE, fig.width=8, fig.height=8}
+bahn2010 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn', var_title = 'Bahn (2010)', res_title = 'Residual plot')
+bahn_new1 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new1', var_title = 'Bahn (new1)', res_title = 'Residual plot')
+bahn_new2 <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_new2', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+
+print(plot_grid(bahn2010, bahn_new1, bahn_new2, nrow = 3))
+```
+
+
+```{r}
+# Use amat rather than amst 
+bahn_new2_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT', var_title = 'Bahn (SPI_PDSI)', res_title = 'Residual plot')
+bahn_new2_maat_MAT <- bahn_vs_new (srdb_orig, 'Rs_annual_bahn_MAT_maat', var_title = 'Bahn (mew3_mat)', res_title = 'Residual plot')
+print(plot_grid(bahn_new2_MAT, bahn_new2_maat_MAT, nrow = 2))
+```
 
