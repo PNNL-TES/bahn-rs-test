@@ -578,7 +578,8 @@ RC_test <- function( sdata, var_title ) {
 # test whether Q10 differ from Ra and Rh dominated sites
 Q10_test <- function(sdata, Q10_type, var_title) {
   printlog(SEPARATOR)
-  sdata <- sdata[!is.na(colnames(sdata) == Q10_type), ]
+  n_col <- colnames(sdata) == Q10_type
+  sdata <- sdata[!is.na(sdata[,n_col]), ]
   sdata <- sdata[!is.na(sdata$RC_annual), ]
   sdata$Q10 <- sdata[, colnames(sdata) == Q10_type]
   sdata <- sdata[sdata$Q10 > 0, ]
@@ -597,8 +598,8 @@ Q10_test <- function(sdata, Q10_type, var_title) {
 
 R10_test <- function (sdata, R10_type, var_title) {
   printlog(SEPARATOR)
-  sdata <- sdata[!is.na(colnames(sdata) == R10_type), ]
   sdata <- sdata[!is.na(sdata$RC_annual), ]
+  sdata <- sdata[!is.na(sdata$R10), ]
   sdata$R10 <- sdata[, colnames(sdata) == R10_type]
   
   p <- ggplot(sdata, aes(R10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +

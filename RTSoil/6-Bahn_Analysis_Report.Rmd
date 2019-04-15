@@ -50,7 +50,7 @@ source('2.0-bahn_processing.R')
 
 
 
-```{r, message='hide', cache=TRUE}
+```{r, message='hide'}
 # calculate Rs_annual_bahn based on mean annual soil temperature, TAnnual, and MAT
 # Load data
 OUTCLIMDATA     <- paste0( "summarized_climate.csv" )
@@ -317,22 +317,24 @@ climate_variability_test( srdb, var_title_T = 'Test TAIR variability'
 * As when we remove the Ag data, the Rs_annual_bahn vs Rs_annual regression still differ from 1:1 line.
 
 ```{r filtration_mk, fig.height = 4, fig.width = 8}
-var_eco <-   # only two desert records
-var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana and natural only less than three data points available
+var_eco <- sort(unique(srdb_orig$Ecosystem_type))  # only two desert records
+var_eco <- var_eco[c(-2,-5, -6)] # Dsert, savana, and natural only less than three data points available
 # create a data frame hold regression results for removed certain ecosystem type and specific ecosystem alone
 # srdb_mv_ag <- filtration_mv ( srdb_orig, 'Agriculture' ) # agriculture as example
 # figB_mv_ag <- Rs_comparion_figure( srdb_mv_ag )          # agriculture as example
 # c("mama.log", "papa.log", "mimo.png", "mentor.log") %>% .[grepl("^m.*\\.log$", .)]
 
 out <- data.frame()
-
 for (i in 1:length (var_eco)) {
   # a specific ecosystem removed 
   srdb_mv_eco <- filtration_mk ( srdb_orig, fil_type = srdb_orig$Ecosystem_type, var = var_eco[i], mk = T )
   lm_mv <- lm(Rs_annual ~ Rs_annual_bahn , data = srdb_mv_eco) #unique(srdb_mv_eco$Ecosystem_type)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
-  p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_eco ) )$coefficients[ 2, 4 ], 4)
+  # test slope differ from 1
+  t_slope_mv <- abs((summary(lm_mv)$coefficients[2, 1] - 1)/summary(lm_mv)$coefficients[2, 2])
+  p_slope_mv <- 2*pt(t_slope_mv, lm_mv$df, lower=FALSE)
+  # p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_eco ) )$coefficients[ 2, 4 ], 4)
   intercept_mv <- round(lm_mv$coefficients[1], 2)
   p_intercept_mv <- round(summary(lm_mv)$coefficients[ 1, 4 ],4)
   # rmse_mv <- mean(lm_mv$residuals^2)^0.5
@@ -344,7 +346,10 @@ for (i in 1:length (var_eco)) {
   lm_kp <- lm(Rs_annual ~ Rs_annual_bahn , data = srdb_kp_eco)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
-  p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_eco ) )$coefficients[ 2, 4 ], 4)
+  # test slope differ from 1
+  t_slope_kp <- abs((summary(lm_kp)$coefficients[2, 1] - 1)/summary(lm_kp)$coefficients[2, 2])
+  p_slope_kp <- 2*pt(t_slope_kp, lm_kp$df, lower=FALSE)
+  # p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_eco ) )$coefficients[ 2, 4 ], 4)
   intercept_kp <- round(lm_kp$coefficients[1], 2)
   p_intercept_kp <- round(summary(lm_kp)$coefficients[ 1, 4 ], 4)
   # rmse_kp <- mean(lm_kp$residuals^2)^0.5
@@ -454,7 +459,7 @@ figC <- RC_test( srdb, var_title = 'Test Ra and Rh dominated sites' )
 ```
 
 * We tested Q10 and R10 at Ra and Rh dominate sites, Ra dominate sites have larger Q10 (0-10, 5-10, 10-20, and 0-20) vaues and R10 values.
-```{r Q10 test, fig.height=6, fig.width=8}
+```{r, fig.height=6, fig.width=8}
 # test Q10 under Ra and Rh dominant sites
 Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', ' A (0-10 cm) ')
 Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', ' B (5-15 cm) ')
@@ -465,7 +470,7 @@ plot_grid(Q10_1, Q10_2, Q10_3, Q10_4, ncol = 2)
 
 ```
 
-```{r R10 test}
+```{r}
 # test Q10 under Ra and Rh dominant sites
 R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
 
@@ -744,11 +749,11 @@ print(plot_grid(bahn_new2_maat_TAnnual, bahn_new2_maat_MAT, nrow = 2))
 
 
 # 7. Select graphs for poster
-```{r, fig.height=6}
+```{r, fig.height=7, fig.width=9}
 plot_Rs_vs_bahn (srdb)
 ```
 
-```{r Q10 test, fig.height=6, fig.width=8}
+```{r, fig.height=6, fig.width=8}
 # test Q10 under Ra and Rh dominant sites
 Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', ' A (0-10 cm) ')
 Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', ' B (5-15 cm) ')
@@ -759,7 +764,7 @@ plot_grid(Q10_1, Q10_2, Q10_3, Q10_4, ncol = 2)
 
 ```
 
-```{r R10 test}
+```{r}
 # test Q10 under Ra and Rh dominant sites
 R10_test(srdb_v4, 'R10', 'Test R10 for Ra and Rh dominate sites')
 
