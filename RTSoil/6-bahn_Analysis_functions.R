@@ -865,8 +865,8 @@ plot_Rs_vs_bahn <- function( sdata ) {
   p_RC <- p_RC + geom_point()
   p_RC <- p_RC + geom_smooth( method='lm' )
   p_RC <- p_RC + geom_abline( slope=1, linetype=2, size = 1.25 ) + 
-    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
-    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")"))  +
+    xlab (expression ("Rs_annual_bahn (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("Rs_annual (g C m"^-2*"yr"^-1* ")"))  +
     theme(legend.position = c(0.75, 0.25), legend.background = element_rect(fill = alpha('white', 0), colour = alpha('white', 0) ))
   
   # By Biome

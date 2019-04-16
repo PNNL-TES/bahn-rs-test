@@ -225,14 +225,16 @@ results <- data.frame()
 for( i in c( 6, 4, 2, 1, 0.5, 0.25 ) ) {
   dat <- filtration3( srdb_orig, i, quiet=T )
   m <- lm(Rs_annual ~ Rs_annual_bahn, data = dat)
+  t_slope <- abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2])
   results <- rbind(results, data.frame(  tdiff_max=i,
                            inter <- round(summary( m )$coefficients[1,1],2),
                            slope <- round(summary( m )$coefficients[2,1],4),
                            R2 = round(summary( m )$adj.r.squared,2),
                            
                            p_inter <- round(summary(m)$coefficients[1,4],4),
-                           p_slope <- round(summary(lm( Rs_annual_bahn - 1*Rs_annual ~ Rs_annual
-                                                        , data = dat ))$coefficients[2,4],4),
+                           p_slope <- round(2*pt(t_slope, m$df, lower=FALSE), 4),
+                           # p_slope <- round(summary(lm( Rs_annual_bahn - 1*Rs_annual ~ Rs_annual
+                           #                              , data = dat ))$coefficients[2,4],4),
                            RSE = round(summary( m )$sigma,2 ),
                            n <- length(dat[,1])
                            ) ) 
@@ -503,7 +505,10 @@ for (i in 1:length (var_filt)) {
   lm_mv <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_mv_filt) #unique(srdb_mv_filt$Biome)
   R2_mv <- round(summary(lm_mv)$r.squared, 2)
   slope_mv <- round(lm_mv$coefficients[2], 2)
-  p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_filt ) )$coefficients[ 2, 4 ], 4)
+  # test slope differ from 1
+  t_slope_mv <- abs((summary(lm_mv)$coefficients[2, 1] - 1)/summary(lm_mv)$coefficients[2, 2])
+  p_slope_mv <- round(2*pt(t_slope_mv, lm_mv$df, lower=FALSE), 4)
+  # p_slope_mv <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_mv_filt ) )$coefficients[ 2, 4 ], 4)
   intercept_mv <- round(lm_mv$coefficients[1], 2)
   p_intercept_mv <- round(summary(lm_mv)$coefficients[ 1, 4 ],4)
   # rmse_mv <- mean(lm_mv$residuals^2)^0.5
@@ -515,7 +520,10 @@ for (i in 1:length (var_filt)) {
   lm_kp <- lm(Rs_annual ~ Rs_annual_bahn  , data = srdb_kp_filt)
   R2_kp <- round(summary(lm_kp)$r.squared, 2)
   slope_kp <- round(lm_kp$coefficients[2], 2)
-  p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_filt ) )$coefficients[ 2, 4 ], 4)
+  # test slope differ from 1
+  t_slope_kp <- abs((summary(lm_kp)$coefficients[2, 1] - 1)/summary(lm_kp)$coefficients[2, 2])
+  p_slope_kp <- round (2*pt(t_slope_kp, lm_kp$df, lower=FALSE), 4)
+  # p_slope_kp <- round(summary( lm( Rs_annual_bahn - 1 * Rs_annual ~ Rs_annual, data=srdb_kp_filt ) )$coefficients[ 2, 4 ], 4)
   intercept_kp <- round(lm_kp$coefficients[1], 2)
   p_intercept_kp <- round(summary(lm_kp)$coefficients[ 1, 4 ], 4)
   # rmse_kp <- mean(lm_kp$residuals^2)^0.5
@@ -755,10 +763,10 @@ plot_Rs_vs_bahn (srdb)
 
 ```{r, fig.height=6, fig.width=8}
 # test Q10 under Ra and Rh dominant sites
-Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', ' A (0-10 cm) ')
-Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', ' B (5-15 cm) ')
-Q10_3 <- Q10_test(srdb_v4, 'Q10_10_20', ' C (10-20 cm) ')
-Q10_4 <- Q10_test(srdb_v4, 'Q10_0_20', ' D (0-20 cm) ')
+Q10_1 <- Q10_test(srdb_v4, 'Q10_0_10', 'A (0-10 C)' )
+Q10_2 <- Q10_test(srdb_v4, 'Q10_5_15', 'B (5-15 C)' )
+Q10_3 <- Q10_test(srdb_v4, 'Q10_10_20', 'C (10-20 C)' )
+Q10_4 <- Q10_test(srdb_v4, 'Q10_0_20', 'D (0-20 C)' )
 
 plot_grid(Q10_1, Q10_2, Q10_3, Q10_4, ncol = 2)  
 
