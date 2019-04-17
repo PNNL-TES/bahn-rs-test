@@ -567,8 +567,8 @@ RC_test <- function( sdata, var_title ) {
   p <- p + geom_point()
   p <- p + geom_smooth( method='lm' )
   p <- p + geom_abline( slope=1, linetype=2 ) + ggtitle (var_title) +
-    xlab (expression ("ln (Rs_annual_bahn) (g C m"^-2*"yr"^-1* ")")) +
-    ylab (expression ("ln (Rs_annual) (g C m"^-2*"yr"^-1* ")")) 
+    xlab (expression ("Rs_annual_bahn (g C m"^-2*"yr"^-1* ")")) +
+    ylab (expression ("Rs_annual (g C m"^-2*"yr"^-1* ")")) 
   print( p )
   # saveplot(outputDir = OUTPUT_DIR,pname = "3-RC_effect" )
   invisible( p )
@@ -829,7 +829,34 @@ bahn_vs_new <- function( sdata, temp, name="", quiet=F, var_title, res_title ) {
 
 
 # ****************************************************************************************************
-#  VI. New add functions, not used yet
+# get statistics metrix
+
+Rs_lm_mat <- function( sdata, bahn, var_model ) {
+  printlog( SEPARATOR )
+  
+  Rs_bahn <- sdata[, colnames(sdata)==bahn]
+  m <- lm( Rs_annual ~ Rs_bahn, data=sdata )
+  print( summary( m ) )
+  
+  intercept <- summary(m)$coefficients[1, 1]
+  t_inter <- abs((summary(m)$coefficients[1, 1])/summary(m)$coefficients[1, 2])
+  p_inter <- round( 2*pt(t_inter, m$df, lower=FALSE), 5 )
+  
+  # Test if slope=1
+  print(paste0(SEPARATOR, 'Test whether intercept differ from 1'))
+  slope <- summary(m)$coefficients[2, 1]
+  t_slope <- abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2])
+  p_slope <- round( 2*pt(t_slope, m$df, lower=FALSE), 5 )
+  print( paste0('t_slope = ', round(t_slope, 3), ', p_slope = ', p_slope, ', df = ', m$df ) )
+  
+  lm_mat <- data.frame (var_model, intercept, t_inter, p_inter, slope, t_slope, p_slope)
+  return (lm_mat)
+  
+  invisible(list( intercept, t_inter, p_inter, slope, t_slope, p_slope, lm_mat ) )
+}
+
+# ****************************************************************************************************
+#  VI. New add functions, plot for poster
 # ****************************************************************************************************
 # Function 5.1: plot data
 
