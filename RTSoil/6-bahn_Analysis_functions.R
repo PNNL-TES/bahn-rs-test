@@ -584,6 +584,8 @@ Q10_test <- function(sdata, Q10_type, var_title) {
   sdata$Q10 <- sdata[, colnames(sdata) == Q10_type]
   sdata <- sdata[sdata$Q10 > 0, ]
   sdata$Ra_Rh_dom <- ifelse(sdata$RC_annual>0.5, 'Ra_dom', 'Rh_dom')
+  n_Ra <- nrow(subset(sdata, sdata$Ra_Rh_dom=='Ra_dom'))
+  n_Rh <- nrow(subset(sdata, sdata$Ra_Rh_dom=='Rh_dom'))
   
   print(paste0('**********ANOVA**********', Q10_type))
   anova <- aov(Q10 ~ Ra_Rh_dom, data = sdata)
@@ -592,8 +594,9 @@ Q10_test <- function(sdata, Q10_type, var_title) {
   p <- ggplot(sdata, aes(Q10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
     ggtitle(var_title) +
     xlab(expression(Q[10])) +
-    theme(legend.position = c(0.75,0.65), legend.background = element_rect(colour = 'transparent', fill = alpha('white', 0), size = 0.75) )
-  
+    theme(legend.position = c(0.75,0.65), legend.background = element_rect(colour = 'transparent', fill = alpha('white', 0), size = 0.75) ) +
+    scale_fill_discrete(name="Ra dominate sites",labels = c(paste0("FALSE (n=", n_Ra, ")"), paste0("TRUE (n=", n_Rh, ")") ) ) +
+    scale_color_discrete(name="Ra dominate sites",labels = c(paste0("FALSE (n=", n_Ra, ")"), paste0("TRUE (n=", n_Rh, ")") ) )
 }
 
 R10_test <- function (sdata, R10_type, var_title) {
@@ -601,9 +604,14 @@ R10_test <- function (sdata, R10_type, var_title) {
   sdata <- sdata[!is.na(sdata$RC_annual), ]
   sdata <- sdata[!is.na(sdata$R10), ]
   sdata$R10 <- sdata[, colnames(sdata) == R10_type]
+  sdata$Ra_Rh_dom <- ifelse(sdata$RC_annual>0.5, 'Ra_dom', 'Rh_dom')
+  n_Ra <- nrow(subset(sdata, sdata$Ra_Rh_dom=='Ra_dom'))
+  n_Rh <- nrow(subset(sdata, sdata$Ra_Rh_dom=='Rh_dom'))
   
   p <- ggplot(sdata, aes(R10, color=RC_annual>0.5, fill = RC_annual>0.5) ) + geom_density(stat = 'density', alpha = 0.25 ) +
-    ggtitle(var_title) + xlab(expression( R[10] ))
+    ggtitle(var_title) + xlab(expression( R[10] )) +
+    scale_fill_discrete(name="Ra dominate sites",labels = c(paste0("FALSE (n=", n_Ra, ")"), paste0("TRUE (n=", n_Rh, ")") ) )+
+    scale_color_discrete(name="Ra dominate sites",labels = c(paste0("FALSE (n=", n_Ra, ")"), paste0("TRUE (n=", n_Rh, ")") ) )
   print(p)
 }
 
@@ -724,9 +732,9 @@ SPI_test <- function( sdata, var_title = NA ) {
   printlog( "How does drought affect this relationship? (continuous)" )
   m2 <- lm( Rs_annual~Rs_annual_bahn * SPI, data=sdata )
   print( summary( m2 ) )
-  sdata$standardized_resids <- rstandard( m2 )
+  sdata$standardized_resids2 <- rstandard( m2 )
   
-  p2 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids )  )   
+  p2 <- ggplot( sdata, aes( SPI, standardized_resids2 )  )   
   
   p2 <- p2 + geom_point( alpha = 0.25 ) + geom_smooth( method='lm' ) +  ylim(-5, 8)+
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
@@ -764,8 +772,8 @@ PDSI_test <- function( sdata, var_title=F ) {
   printlog( "How does drought affect this relationship? (continuous)" )
   m2 <- lm( Rs_annual ~ Rs_annual_bahn * pdsi_pm_mean, data=sdata )
   print( summary( m2 ) )
-  sdata$standardized_resids <- rstandard( m2 )
-  p2 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids )  )  +
+  sdata$standardized_resids2 <- rstandard( m2 )
+  p2 <- ggplot( sdata, aes( pdsi_pm_mean, standardized_resids2 )  )  +
     ylab( expression( Standardized~residual~(g~C~m^{-2}~yr^{-1}) ) ) + 
     xlab( expression( PDSI ) ) 
   
@@ -838,15 +846,15 @@ Rs_lm_mat <- function( sdata, bahn, var_model ) {
   m <- lm( Rs_annual ~ Rs_bahn, data=sdata )
   print( summary( m ) )
   
-  intercept <- summary(m)$coefficients[1, 1]
-  t_inter <- abs((summary(m)$coefficients[1, 1])/summary(m)$coefficients[1, 2])
-  p_inter <- round( 2*pt(t_inter, m$df, lower=FALSE), 5 )
+  intercept <- round(summary(m)$coefficients[1, 1], 3)
+  t_inter <- round(abs((summary(m)$coefficients[1, 1])/summary(m)$coefficients[1, 2]), 3)
+  p_inter <- round( 2*pt(t_inter, m$df, lower=FALSE), 3)
   
   # Test if slope=1
   print(paste0(SEPARATOR, 'Test whether intercept differ from 1'))
-  slope <- summary(m)$coefficients[2, 1]
-  t_slope <- abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2])
-  p_slope <- round( 2*pt(t_slope, m$df, lower=FALSE), 5 )
+  slope <- round(summary(m)$coefficients[2, 1], 3)
+  t_slope <- round(abs((summary(m)$coefficients[2, 1] - 1)/summary(m)$coefficients[2, 2]), 3)
+  p_slope <- round( 2*pt(t_slope, m$df, lower=FALSE), 3)
   print( paste0('t_slope = ', round(t_slope, 3), ', p_slope = ', p_slope, ', df = ', m$df ) )
   
   lm_mat <- data.frame (var_model, intercept, t_inter, p_inter, slope, t_slope, p_slope)
